@@ -39,6 +39,7 @@
 #include "network.hpp"
 
 #include "kncube.hpp"
+#include "Hcube.hpp"
 #include "fly.hpp"
 #include "cmesh.hpp"
 #include "flatfly_onchip.hpp"
@@ -87,6 +88,9 @@ Network * Network::New(const Configuration & config, const string & name)
   } else if ( topo == "mesh" ) {
     KNCube::RegisterRoutingFunctions() ;
     n = new KNCube( config, name, true );
+  } else if ( topo == "hcube" ) {
+    HCube::RegisterRoutingFunctions() ;
+    n = new HCube( config, name, true );
   } else if ( topo == "cmesh" ) {
     CMesh::RegisterRoutingFunctions() ;
     n = new CMesh( config, name );
