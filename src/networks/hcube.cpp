@@ -59,7 +59,7 @@ void HCube::_ComputeSize( const Configuration &config )
 
   gK = _k; gN = _n;
   _size     = powi( _k, _n );
-  _channels = (_k-1)*_n*_size; //HyperXは一次元上にk個並ぶ．つまりk-1個の相手とつながる．
+  _channels = 2*(_k-1)*_n*_size; //HyperXは一次元上にk個並ぶ．つまりk-1個の相手とつながる．
 
   _nodes = _size;
 }
