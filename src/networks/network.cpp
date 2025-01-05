@@ -47,6 +47,7 @@
 #include "fattree.hpp"
 #include "anynet.hpp"
 #include "dragonfly.hpp"
+#include "polarfly.hpp"
 
 
 Network::Network( const Configuration &config, const string & name ) :
@@ -111,6 +112,10 @@ Network * Network::New(const Configuration & config, const string & name)
   } else if ( topo == "dragonflynew"){
     DragonFlyNew::RegisterRoutingFunctions() ;
     n = new DragonFlyNew(config, name);
+  } else if ( topo == "polarflynew"){
+    // todo:
+    PolarFlyNew::RegisterRoutingFunctions() ;
+    n = new PolarFlyNew(config, name);
   } else {
     cerr << "Unknown topology: " << topo << endl;
   }
