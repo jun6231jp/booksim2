@@ -35,11 +35,19 @@
 #include "misc_utils.hpp"
 #include "globals.hpp"
 
-#define DRAGON_LATENCY
+#define POLAR_LATENCY 
+#define Hypercubeport 7
+#define Polarflyport 8
 
 int gP, gA, gG;
 
-//calculate the hop count between src and estination
+//Hypercube : Local (group)
+//Polarfly  : Global
+
+
+
+
+//calculate the hop count between src and destination
 int polarflyplusnew_hopcnt(int src, int dest) 
 {
   int hopcnt;
@@ -102,7 +110,7 @@ int polarflyplusnew_hopcnt(int src, int dest)
 
 
 //packet output port based on the source, destination and current location
-int polarflyplus_port(int rID, int source, int dest){
+int polarfly_port(int rID, int source, int dest){
   int _grp_num_routers= gA;
   int _grp_num_nodes =_grp_num_routers*gP;
 
@@ -146,7 +154,7 @@ int polarflyplus_port(int rID, int source, int dest){
 }
 
 
-PolarFlyplusNew::PolarFlyplusNew( const Configuration &config, const string & name ) :
+PolarFlyNew::PolarFlyNew( const Configuration &config, const string & name ) :
   Network( config, name )
 {
 
@@ -155,49 +163,30 @@ PolarFlyplusNew::PolarFlyplusNew( const Configuration &config, const string & na
   _BuildNet( config );
 }
 
-void PolarFlyplusNew::_ComputeSize( const Configuration &config )
+void PolarFlyNew::_ComputeSize( const Configuration &config )
 {
 
   // LIMITATION
-  //  -- only one dimension between the group
   // _n == # of dimensions within a group
   // _p == # of processors within a router
-  // inter-group ports : _p
-  // terminal ports : _p
-  // intra-group ports : 2*_p - 1
-  _p = config.GetInt( "k" );	// # of ports in each switch
+  _p = config.GetInt( "k" );// # of nodes in each switch=1
   _n = config.GetInt( "n" );
-
   _p=1;
+  _n=1;
   assert(_n==1);
-  // dimension
 
-  _k = 17; // Polarfly 8 hypercube 8, CPU 1 
+  _k = Polarflyport+Hypercubeport+1; // Polarfly + Hyoercube+  CPU  
 
   // FIX...
   gK = _p; gN = _n;
 
-  // with 1 dimension, total of 2p routers per group
-  // N = 2p * p * (2p^2 + 1)
-  // a = # of routers per group
-  //   = 2p (if n = 1)
-  //   = p^(n) (if n > 2)
-  //  g = # of groups
-  //    = a * p + 1
-  // N = a * p * g;
-  
-  if (_n == 1)
-    _a = 2 * _p;
-  else
-    _a = powi(_p, _n);
-  _a=128; //hypercube 
-  _g = 57;//_a * _p + 1;
-  _nodes = 57*128 ; //_a * _p * _g;
-
-  _num_of_switch = 57*128 //_nodes / _p;
-  _channels = 17; // Polarfly 8 , hyoercube 8, CPU 1
+  //F7 Polarfly only
+  _a = 57;
+  _nodes = _a*powi(2, Polarflyport); 
+  _num_of_switch = _nodes / _p;
+  _channels = _num_of_switch * (Polarflyport + Hypercubeport); 
   _size = _num_of_switch;
-
+  
   gG = _g;
   gP = _p;
   gA = _a;
@@ -206,20 +195,18 @@ void PolarFlyplusNew::_ComputeSize( const Configuration &config )
 
 }
 
-void PolarFlyplusNew::_BuildNet( const Configuration &config )
+void PolarFlyNew::_BuildNet( const Configuration &config )
 {
 
   int _output=-1;
   int _input=-1;
   int _dim_ID=-1;
-  int _num_ports_per_switch=8;
+  int _num_ports_per_switch=;
   int c;
 
   ostringstream router_name;
 
-
-
-  cout << " Polarflyplus " << endl;
+  cout << " Polarfly " << endl;
   cout << " p = " << _p << " n = " << _n << endl;
   cout << " each switch - total radix =  "<< _k << endl;
   cout << " # of switches = "<<  _num_of_switch << endl;
@@ -254,12 +241,6 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
 
     }
 
-    // add OUPUT channels
-    // _k == # of processor per router
-    //  need 2*_k routers  --thus, 
-    //  2_k-1 outputs channels within group
-    //  _k-1 outputs for intra-group
-
     //
 
     if (_n > 1 )  { cout << " ERROR: n>1 dimension NOT supported yet... " << endl; exit(-1); }
@@ -269,12 +250,12 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     //********************************************
     // add intra-group output channel
     for ( int dim = 0; dim < _n; ++dim ) {
-      for ( int cnt = 0; cnt < 8; ++cnt ) {
-	_output = 17 * node + cnt;
+      for ( int cnt = 0; cnt < Hypercubeport; ++cnt ) {
+	_output = (Polarflyport+Hypercubeport+1) * node + cnt;
 
 	_routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
 
-#ifdef DRAGON_LATENCY
+#ifdef POLAR_LATENCY
 	_chan[_output]->SetLatency(10);
 	_chan_cred[_output]->SetLatency(10);
 #endif
@@ -283,12 +264,12 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
 
     // add inter-group output channel
 
-    for ( int cnt = 0; cnt < 8; ++cnt ) {
-      _output = 17 * node + 8 + cnt;
+    for ( int cnt = 0; cnt < Polarflyport; ++cnt ) {
+      _output = (Polarflyport+Hypercubeport+1) * node + Hypercubeport + cnt;
 
       //      _chan[_output].global = true;
       _routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
-#ifdef DRAGON_LATENCY
+#ifdef POLAR_LATENCY
       _chan[_output]->SetLatency(10);
       _chan_cred[_output]->SetLatency(10);
 #endif
@@ -299,23 +280,17 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     //   connect INPUT channels
     //********************************************
     // # of non-local nodes 
-    _num_ports_per_switch = (_k - _p);
+    _num_ports_per_switch = Polarflyport + Hypercubeport;
 
 
     // intra-group GROUP channels  hypercube
     for ( int dim = 0; dim < _n; ++dim ) {
-
       _dim_ID = ((int) (node / ( powi(_p, dim))));
-
-
 
       // NODE ID withing group
       _dim_ID = node % _a;
 
-
-
-
-      for ( int cnt = 0; cnt < 8; ++cnt ) {
+      for ( int cnt = 0; cnt < Hypercubeport; ++cnt ) {
 
 	if ( cnt < _dim_ID)  {
 
@@ -396,12 +371,12 @@ double DragonFlyNew::Capacity( ) const
 
 void DragonFlyNew::RegisterRoutingFunctions(){
 
-  gRoutingFunctionMap["min_dragonflynew"] = &min_dragonflynew;
-  gRoutingFunctionMap["ugal_dragonflynew"] = &ugal_dragonflynew;
+  gRoutingFunctionMap["min_polarflynew"] = &min_polarflynew;
+  gRoutingFunctionMap["ugal_polarflynew"] = &ugal_polarflynew;
 }
 
 
-void min_dragonflynew( const Router *r, const Flit *f, int in_channel, 
+void min_polarflynew( const Router *r, const Flit *f, int in_channel, 
 		       OutputSet *outputs, bool inject )
 {
   outputs->Clear( );
@@ -432,7 +407,7 @@ void min_dragonflynew( const Router *r, const Flit *f, int in_channel,
   } 
 
 
-  out_port = dragonfly_port(rID, f->src, dest);
+  out_port = polarfly_port(rID, f->src, dest);
 
   //optical dateline
   if (out_port >=gP + (gA-1)) {
@@ -448,8 +423,8 @@ void min_dragonflynew( const Router *r, const Flit *f, int in_channel,
 }
 
 
-//Basic adaptive routign algorithm for the dragonfly
-void ugal_dragonflynew( const Router *r, const Flit *f, int in_channel, 
+//Basic adaptive routign algorithm for the polarfly
+void ugal_polarflynew( const Router *r, const Flit *f, int in_channel, 
 			OutputSet *outputs, bool inject )
 {
   //need 3 VCs for deadlock freedom
@@ -507,11 +482,11 @@ void ugal_dragonflynew( const Router *r, const Flit *f, int in_channel,
 	f->ph = 1;
       } else {
 	//congestion metrics using queue length, obtained by GetUsedCredit()
-	min_router_output = dragonfly_port(rID, f->src, f->dest); 
+	min_router_output = polarfly_port(rID, f->src, f->dest); 
       	min_queue_size = max(r->GetUsedCredit(min_router_output), 0) ; 
 
       
-	nonmin_router_output = dragonfly_port(rID, f->src, f->intm);
+	nonmin_router_output = polarfly_port(rID, f->src, f->intm);
 	nonmin_queue_size = max(r->GetUsedCredit(nonmin_router_output), 0);
 
 	//congestion comparison, could use hopcnt instead of 1 and 2
@@ -535,11 +510,17 @@ void ugal_dragonflynew( const Router *r, const Flit *f, int in_channel,
 
   //port assignement based on the phase
   if(f->ph == 0){
-    out_port = dragonfly_port(rID, f->src, f->intm);
+    out_port = polarfly_port(rID, f->src, f->intm);
   } else if(f->ph == 1){
-    out_port = dragonfly_port(rID, f->src, f->dest);
+    out_port = polarfly_port(rID, f->src, f->dest);
   } else if(f->ph == 2){
-    out_port = dragonfly_port(rID, f->src, f->dest);
+    out_port = polarfly_port(rID, f->src, f->dest);
+  } else {
+    assert(false);
+  }
+
+  } else if(f->ph == 2){
+    out_port = polarfly_port(rID, f->src, f->dest);
   } else {
     assert(false);
   }
