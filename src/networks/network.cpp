@@ -40,6 +40,7 @@
 
 #include "kncube.hpp"
 #include "Hcube.hpp"
+#include "Polarflyplus.hpp"
 #include "fly.hpp"
 #include "cmesh.hpp"
 #include "flatfly_onchip.hpp"
@@ -115,6 +116,9 @@ Network * Network::New(const Configuration & config, const string & name)
   } else if ( topo == "dragonflynew"){
     DragonFlyNew::RegisterRoutingFunctions() ;
     n = new DragonFlyNew(config, name);
+  } else if ( topo == "Polarflyplusnew"){
+    PolarFlyplusNew::RegisterRoutingFunctions() ;
+    n = new PolarFlyplusNew(config, name);
   } else {
     cerr << "Unknown topology: " << topo << endl;
   }

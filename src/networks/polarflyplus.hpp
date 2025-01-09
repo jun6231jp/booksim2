@@ -25,13 +25,13 @@
                                                                      
                                                                      
                                              
-#ifndef _DragonFly_HPP_
-#define _DragonFly_HPP_
+#ifndef _PolarFlyplus_HPP_
+#define _PolarFlyplus_HPP_
 
 #include "network.hpp"
 #include "routefunc.hpp"
 
-class DragonFlyNew : public Network {
+class PolarFlyplusNew : public Network {
 
   int _m;
   int _n;
@@ -54,7 +54,7 @@ class DragonFlyNew : public Network {
 
  
 public:
-  DragonFlyNew( const Configuration &config, const string & name );
+  PolarFlyplusNew( const Configuration &config, const string & name );
 
   int GetN( ) const;
   int GetK( ) const;
@@ -64,11 +64,11 @@ public:
   void InsertRandomFaults( const Configuration &config );
 
 };
-int dragonfly_port(int rID, int source, int dest);
+int polarflyplus_port(int rID, int source, int dest);
 
-void ugal_dragonflynew( const Router *r, const Flit *f, int in_channel,
+void ugal_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
 		       OutputSet *outputs, bool inject );
-void min_dragonflynew( const Router *r, const Flit *f, int in_channel, 
+void min_polarflyplusnew( const Router *r, const Flit *f, int in_channel, 
 		       OutputSet *outputs, bool inject );
 
 #endif 
