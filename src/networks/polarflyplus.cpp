@@ -39,68 +39,72 @@
 #define Hypercubeport 7
 #define Polarflyport 8
 
-int gP, gA, gG;
+int gP_polar, gA_polar, gG_polar;
 
 //Hypercube : Local (group)
 //Polarfly  : Global
+vector<vector<string>> dbg;
+// node0-p0, node1-p0, hypercube
 
-int polarfly_table[57][8]={{9,10,11,12,13,14,15,1}
-,{16,17,18,12,19,20,21,2}
-,{22,23,24,25,13,20,26,3}
-,{27,28,29,25,19,14,30,4}
-,{27,23,18,31,32,33,15,5}
-,{22,28,11,34,35,33,21,6}
-,{16,10,24,34,32,36,30,7}
-,{9,17,29,31,35,36,26,8}
-,{27,37,24,1,38,39,8,21}
-,{40,23,41,1,35,19,7,42}
-,{43,44,29,1,32,6,20,45}
-,{46,25,34,47,1,2,48,31}
-,{49,17,50,1,3,51,33,30}
-,{22,52,18,1,4,36,53,54}
-,{16,28,55,1,56,5,57,26}
-,{22,37,29,2,56,51,7,15}
-,{40,28,50,2,32,13,8,54}
-,{49,52,24,2,35,5,14,45}
-,{43,10,41,2,4,39,33,26}
-,{27,44,11,2,3,36,57,42}
-,{9,23,55,2,38,6,53,30}
-,{16,37,41,31,3,6,14,54}
-,{40,10,29,47,3,5,53,21}
-,{9,28,18,48,3,39,7,45}
-,{46,12,38,3,35,32,4,56}
-,{43,52,55,34,3,19,8,15}
-,{9,37,50,34,4,5,20,42}
-,{40,17,24,48,4,6,57,15}
-,{16,23,11,47,4,51,8,45}
-,{49,44,55,31,4,13,7,21}
-,{22,44,41,48,12,5,8,30}
-,{43,17,11,25,38,5,7,54}
-,{46,36,51,5,19,13,6,39}
-,{27,52,50,47,12,6,7,26}
-,{49,10,18,25,56,6,8,42}
-,{46,33,14,53,7,8,57,20}
-,{46,40,43,22,16,9,27,49}
-,{9,52,41,25,32,51,57,21}
-,{9,44,24,47,56,19,33,54}
-,{46,37,44,10,23,28,17,52}
-,{22,10,50,31,38,19,57,45}
-,{27,10,55,48,35,51,20,54}
-,{49,37,11,48,32,19,53,26}
-,{40,52,11,31,56,39,20,30}
-,{46,55,18,29,41,50,24,11}
-,{40,37,55,25,12,36,33,45}
-,{49,23,29,34,12,39,57,54}
-,{43,28,24,31,12,51,53,42}
-,{43,37,18,47,35,13,57,30}
-,{27,17,41,34,56,13,53,45}
-,{16,52,29,48,38,13,33,42}
-,{40,44,18,34,38,51,14,26}
-,{43,23,50,48,56,36,14,21}
-,{22,17,55,47,32,39,14,42}
-,{46,45,26,21,42,54,15,30}
-,{16,44,50,25,35,39,53,15}
-,{49,28,41,47,38,36,20,15}
+int polarfly_table[57][8]=
+{
+{8,9,10,11,12,13,14,0},
+{15,16,17,11,18,19,20,1},
+{21,22,23,24,12,19,25,2},
+{26,27,28,24,18,13,29,3},
+{26,22,17,30,31,32,14,4},
+{21,27,10,33,34,32,20,5},
+{15,9,23,33,31,35,29,6},
+{8,16,28,30,34,35,25,7},
+{26,36,23,0,37,38,7,20},
+{39,22,40,0,34,18,6,41},
+{42,43,28,0,31,5,19,44},
+{45,24,33,46,0,1,47,30},
+{48,16,49,0,2,50,32,29},
+{21,51,17,0,3,35,52,53},
+{15,27,54,0,55,4,56,25},
+{21,36,28,1,55,50,6,14},
+{39,27,49,1,31,12,7,53},
+{48,51,23,1,34,4,13,44},
+{42,9,40,1,3,38,32,25},
+{26,43,10,1,2,35,56,41},
+{8,22,54,1,37,5,52,29},
+{15,36,40,30,2,5,13,53},
+{39,9,28,46,2,4,52,20},
+{8,27,17,47,2,38,6,44},
+{45,11,37,2,34,31,3,55},
+{42,51,54,33,2,18,7,14},
+{8,36,49,33,3,4,19,41},
+{39,16,23,47,3,5,56,14},
+{15,22,10,46,3,50,7,44},
+{48,43,54,30,3,12,6,20},
+{21,43,40,47,11,4,7,29},
+{42,16,10,24,37,4,6,53},
+{45,35,50,4,18,12,5,38},
+{26,51,49,46,11,5,6,25},
+{48,9,17,24,55,5,7,41},
+{45,32,13,52,6,7,56,19},
+{45,39,42,21,15,8,26,48},
+{8,51,40,24,31,50,56,20},
+{8,43,23,46,55,18,32,53},
+{45,36,43,9,22,27,16,51},
+{21,9,49,30,37,18,56,44},
+{26,9,54,47,34,50,19,53},
+{48,36,10,47,31,18,52,25},
+{39,51,10,30,55,38,19,29},
+{45,54,17,28,40,49,23,10},
+{39,36,54,24,11,35,32,44},
+{48,22,28,33,11,38,56,53},
+{42,27,23,30,11,50,52,41},
+{42,36,17,46,34,12,56,29},
+{26,16,40,33,55,12,52,44},
+{15,51,28,47,37,12,32,41},
+{39,43,17,33,37,50,13,25},
+{42,22,49,47,55,35,13,20},
+{21,16,54,46,31,38,13,41},
+{45,44,25,20,41,53,14,29},
+{15,43,49,24,34,38,52,14},
+{48,27,40,46,37,35,19,14}
 };
 
 
@@ -114,15 +118,15 @@ int polarflyplusnew_hopcnt(int src, int dest)
   int grp_output, dest_grp_output;
   int grp_output_RID;
 
-  int _grp_num_routers= gA;
-  int _grp_num_nodes =_grp_num_routers*gP;
+  int _grp_num_routers= gA_polar;
+  int _grp_num_nodes =_grp_num_routers*gP_polar;
   
   dest_grp_ID = int(dest/_grp_num_nodes);
   src_grp_ID = int(src / _grp_num_nodes);
   
   //source and dest are in the same group, either 0-1 hop
   if (dest_grp_ID == src_grp_ID) {
-    if ((int)(dest / gP) == (int)(src /gP))
+    if ((int)(dest / gP_polar) == (int)(src /gP_polar))
       hopcnt = 0;
     else
       hopcnt = 1;
@@ -139,20 +143,20 @@ int polarflyplusnew_hopcnt(int src, int dest)
       grp_output = dest_grp_ID - 1;
       dest_grp_output = src_grp_ID;
     }
-    grp_output_RID = ((int) (grp_output / (gP))) + src_grp_ID * _grp_num_routers;
-    src_intm = grp_output_RID * gP;
+    grp_output_RID = ((int) (grp_output / (gP_polar))) + src_grp_ID * _grp_num_routers;
+    src_intm = grp_output_RID * gP_polar;
 
-    grp_output_RID = ((int) (dest_grp_output / (gP))) + dest_grp_ID * _grp_num_routers;
-    dest_intm = grp_output_RID * gP;
+    grp_output_RID = ((int) (dest_grp_output / (gP_polar))) + dest_grp_ID * _grp_num_routers;
+    dest_intm = grp_output_RID * gP_polar;
 
     //hop count in source group
-    if ((int)( src_intm / gP) == (int)( src / gP ) )
+    if ((int)( src_intm / gP_polar) == (int)( src / gP_polar ) )
       src_hopcnt = 0;
     else
       src_hopcnt = 1; 
 
     //hop count in destination group
-    if ((int)( dest_intm / gP) == (int)( dest / gP ) ){
+    if ((int)( dest_intm / gP_polar) == (int)( dest / gP_polar ) ){
       dest_hopcnt = 0;
     }else{
       dest_hopcnt = 1;
@@ -168,8 +172,8 @@ int polarflyplusnew_hopcnt(int src, int dest)
 
 //packet output port based on the source, destination and current location
 int polarflyplus_port(int rID, int source, int dest){
-  int _grp_num_routers= gA;
-  int _grp_num_nodes =_grp_num_routers*gP;
+  int _grp_num_routers= gA_polar;
+  int _grp_num_nodes =_grp_num_routers*gP_polar;
 
   int out_port = -1;
   int grp_ID = int(rID / _grp_num_routers); 
@@ -179,30 +183,30 @@ int polarflyplus_port(int rID, int source, int dest){
   
   //which router within this group the packet needs to go to
   if (dest_grp_ID == grp_ID) {
-    grp_RID = int(dest / gP);
+    grp_RID = int(dest / gP_polar);
   } else {
     if (grp_ID > dest_grp_ID) {
       grp_output = dest_grp_ID;
     } else {
       grp_output = dest_grp_ID - 1;
     }
-    grp_RID = int(grp_output /gP) + grp_ID * _grp_num_routers;
+    grp_RID = int(grp_output /gP_polar) + grp_ID * _grp_num_routers;
   }
 
   //At the last hop
-  if (dest >= rID*gP && dest < (rID+1)*gP) {    
-    out_port = dest%gP;
+  if (dest >= rID*gP_polar && dest < (rID+1)*gP_polar) {    
+    out_port = dest%gP_polar;
   } else if (grp_RID == rID) {
     //At the optical link
-    out_port = gP + (gA-1) + grp_output %(gP);
+    out_port = gP_polar + (gA_polar-1) + grp_output %(gP_polar);
   } else {
     //need to route within a group
     assert(grp_RID!=-1);
 
     if (rID < grp_RID){
-      out_port = (grp_RID % _grp_num_routers) - 1 + gP;
+      out_port = (grp_RID % _grp_num_routers) - 1 + gP_polar;
     }else{
-      out_port = (grp_RID % _grp_num_routers) + gP;
+      out_port = (grp_RID % _grp_num_routers) + gP_polar;
     }
   }  
  
@@ -239,16 +243,18 @@ void PolarFlyplusNew::_ComputeSize( const Configuration &config )
 
   //group : Hypercube
   _a = powi(2,Hypercubeport);
-  _nodes = _a*powi(2, Polarflyport); 
+  _g = 57; //F7 Polarfly
+  _nodes   = _a * _p * _g;
+ 
   _num_of_switch = _nodes / _p;
   _channels = _num_of_switch * (Polarflyport + Hypercubeport); 
   _size = _num_of_switch;
   
-  gG = _g;
-  gP = _p;
-  gA = _a;
-  _grp_num_routers = gA;
-  _grp_num_nodes =_grp_num_routers*gP;
+  gG_polar = _g;
+  gP_polar = _p;
+  gA_polar = _a;
+  _grp_num_routers = gA_polar;
+  _grp_num_nodes =_grp_num_routers*gP_polar;
 
 }
 
@@ -257,8 +263,8 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
 
   int _output=-1;
   int _input=-1;
-  int _dim_ID=-1;
-  int _num_ports_per_switch=Polarflyport+Hypercubeport+1;
+  //int _dim_ID=-1;
+  //int _num_ports_per_switch=Polarflyport+Hypercubeport+1;
   int c;
 
   ostringstream router_name;
@@ -271,7 +277,7 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
   cout << " # of nodes ( size of network ) = " << _nodes << endl;
   cout << " # of groups (_g) = " << _g << endl;
   cout << " # of routers per group (_a) = " << _a << endl;
-
+  int ch_count=0;
   for ( int node = 0; node < _num_of_switch; ++node ) {
     // ID of the group
     int grp_ID;
@@ -279,11 +285,11 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     router_name << "router";
     
     router_name << "_" <<  node ;
-
+    //cout << router_name.str( ) << endl;
     _routers[node] = Router::NewRouter( config, this, router_name.str( ), 
 					node, _k, _k );
     _timed_modules.push_back(_routers[node]);
-
+    //cout << "rounters created" << endl;
     router_name.str("");
 
     for ( int cnt = 0; cnt < _p; ++cnt ) {
@@ -297,7 +303,7 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
       _routers[node]->AddOutputChannel( _eject[c], _eject_cred[c] );
 
     }
-
+    //cout << "inject, eject connected" << endl;
     //
 
     if (_n > 1 )  { cout << " ERROR: n>1 dimension NOT supported yet... " << endl; exit(-1); }
@@ -309,10 +315,9 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     //
     //_chan[output] : {{src hypercube ports}, {src polarfly ports}}
     
-    for ( int dim = 0; dim < _n; ++dim ) {
       for ( int cnt = 0; cnt < Hypercubeport; ++cnt ) {
-	_output = (Polarflyport+Hypercubeport+1) * node + cnt;
-
+	_output = (Polarflyport+Hypercubeport) * node + cnt;
+        dbg.push_back({ to_string(_output), "Hypercube","node"+to_string(node)+"-port"+to_string(cnt) });
 	_routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
 
 #ifdef POLAR_LATENCY
@@ -320,48 +325,62 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
 	_chan_cred[_output]->SetLatency(10);
 #endif
       }
-    }
-
+     //cout << "Hypercube output channels connected" << endl;
     //add polarfly output channel
     for ( int cnt = 0; cnt < Polarflyport; ++cnt ) {
-      _output = (Polarflyport+Hypercubeport+1) * node + Hypercubeport + cnt;
-
+      _output = (Polarflyport+Hypercubeport) * node + Hypercubeport + cnt;
       //_chan[_output].global = true;
+      if(grp_ID <= 7 && cnt==7) continue; //red group : no self-connection
+      dbg.push_back({ to_string(_output), "Polarfly","node"+to_string(node)+"-port"+to_string(cnt+Hypercubeport) });
       _routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
 #ifdef POLAR_LATENCY
       _chan[_output]->SetLatency(10);
       _chan_cred[_output]->SetLatency(10);
 #endif
     }
-
+    //cout << "Polarfly output channels connected" << endl;
 
     //********************************************
     //   connect INPUT channels
     //********************************************
     //_chan[input] :  {{dest hypercube ports}, {dest polarfly ports}}
-    _num_ports_per_switch = Polarflyport + Hypercubeport;
-
+    //_num_ports_per_switch = Polarflyport + Hypercubeport;
+   
     //hypercube calculation
     for ( int cnt = 0; cnt < Hypercubeport; ++cnt ) {
-	_input = (node ^ powi(2, Hypercubeport)) * _num_ports_per_switch + cnt;
+	_input = (node ^ (1<<cnt)) * (Polarflyport+Hypercubeport) + cnt;
+       dbg[ch_count].push_back ("node"+to_string(node ^ (1<<cnt))+"-port"+to_string(cnt));
+       ch_count++;
 	_routers[node]->AddInputChannel( _chan[_input], _chan_cred[_input] );
       }
-
+    //cout << "Hypercube input channels connected" << endl;
     //Polarfly  table refer
     int dest_polarport;
     for ( int cnt = 0; cnt < Polarflyport; ++cnt ) {
       for(int i = 0 ; i < 8; i++){
           if (polarfly_table[polarfly_table[grp_ID][cnt]][i]==grp_ID){
-                dest_polarport=i;
+                dest_polarport=i+Hypercubeport;
+		break;
 	  }
       }
-      _input = polarfly_table[_grpID][cnt]*powi(2,Hypercubeport)*_num_ports_per_switch + dest_polarport;
-	  
+      int hyperadd = node%(powi(2,Hypercubeport));
+      int dest_node_add = polarfly_table[grp_ID][cnt]*powi(2,Hypercubeport)+hyperadd;
+      //cout << hyperadd << " " << polarfly_table[grp_ID][cnt] << endl; 
+      _input = dest_node_add * (Polarflyport+Hypercubeport) + dest_polarport;
+      if(grp_ID <= 7 && cnt==7) continue; //red group : no self-connection
+       dbg[ch_count].push_back ("node"+to_string(dest_node_add)+"-port"+to_string(dest_polarport));
+       ch_count++;
       _routers[node]->AddInputChannel( _chan[_input], _chan_cred[_input] );
     }
+    //cout << "Polarfly input channels connected" << endl;
 
   }
 
+  for(int i = 0; i < ch_count; i++){
+     for(int j = 0 ; j < 4; j++){
+         cout << dbg[i][j] << " ";
+     } cout << endl;
+  }
   cout<<"Done links"<<endl;
 }
 
@@ -404,7 +423,7 @@ void min_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
     return;
   }
 
-  int _grp_num_routers= gA;
+  int _grp_num_routers= gA_polar;
 
   int dest  = f->dest;
   int rID =  r->GetID(); 
@@ -415,7 +434,7 @@ void min_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
   int out_vc = 0;
   int dest_grp_ID=-1;
 
-  if ( in_channel < gP ) {
+  if ( in_channel < gP_polar ) {
     out_vc = 0;
     f->ph = 0;
     if (dest_grp_ID == grp_ID) {
@@ -427,7 +446,7 @@ void min_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
   out_port = polarflyplus_port(rID, f->src, dest);
 
   //optical dateline
-  if (out_port >=gP + (gA-1)) {
+  if (out_port >=gP_polar + (gA_polar-1)) {
     f->ph = 1;
   }  
   
@@ -458,9 +477,9 @@ void ugal_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
   //negative value woudl biases it towards nonminimum routing
   int adaptive_threshold = 30;
 
-  int _grp_num_routers= gA;
-  int _grp_num_nodes =_grp_num_routers*gP;
-  int _network_size =  gA * gP * gG;
+  int _grp_num_routers= gA_polar;
+  int _grp_num_nodes =_grp_num_routers*gP_polar;
+  int _network_size =  gA_polar * gP_polar * gG_polar;
 
  
   int dest  = f->dest;
@@ -482,7 +501,7 @@ void ugal_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
   int min_router_output, nonmin_router_output;
   
   //at the source router, make the adaptive routing decision
-  if ( in_channel < gP )   {
+  if ( in_channel < gP_polar )   {
     //dest are in the same group, only use minimum routing
     if (dest_grp_ID == grp_ID) {
       f->ph = 2;
@@ -519,7 +538,7 @@ void ugal_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
 
   //transition from nonminimal phase to minimal
   if(f->ph==0){
-    intm_rID= (int)(f->intm/gP);
+    intm_rID= (int)(f->intm/gP_polar);
     if( rID == intm_rID){
       f->ph = 1;
     }
@@ -536,14 +555,9 @@ void ugal_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
     assert(false);
   }
 
-  } else if(f->ph == 2){
-    out_port = polarflyplus_port(rID, f->src, f->dest);
-  } else {
-    assert(false);
-  }
 
   //optical dateline
-  if (f->ph == 1 && out_port >=gP + (gA-1)) {
+  if (f->ph == 1 && out_port >=gP_polar + (gA_polar-1)) {
     f->ph = 2;
   }  
 

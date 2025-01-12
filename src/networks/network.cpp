@@ -116,7 +116,7 @@ Network * Network::New(const Configuration & config, const string & name)
   } else if ( topo == "dragonflynew"){
     DragonFlyNew::RegisterRoutingFunctions() ;
     n = new DragonFlyNew(config, name);
-  } else if ( topo == "Polarflyplusnew"){
+  } else if ( topo == "polarflyplus"){
     PolarFlyplusNew::RegisterRoutingFunctions() ;
     n = new PolarFlyplusNew(config, name);
   } else {

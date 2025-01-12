@@ -44,6 +44,7 @@
 #include "routefunc.hpp"
 #include "kncube.hpp"
 #include "hcube.hpp"
+#include "polarflyplus.hpp"
 #include "random_utils.hpp"
 #include "misc_utils.hpp"
 #include "fattree.hpp"
@@ -51,13 +52,74 @@
 #include "qtree.hpp"
 #include "cmesh.hpp"
 
-
+#define Hypercubeport 7
+#define Polarflyport 8
 
 map<string, tRoutingFunction> gRoutingFunctionMap;
 
 /* Global information used by routing functions */
 
 int gNumVCs;
+int polarfly_routing_table[57][8]=
+{
+{8,9,10,11,12,13,14,0},
+{15,16,17,11,18,19,20,1},
+{21,22,23,24,12,19,25,2},
+{26,27,28,24,18,13,29,3},
+{26,22,17,30,31,32,14,4},
+{21,27,10,33,34,32,20,5},
+{15,9,23,33,31,35,29,6},
+{8,16,28,30,34,35,25,7},
+{26,36,23,0,37,38,7,20},
+{39,22,40,0,34,18,6,41},
+{42,43,28,0,31,5,19,44},
+{45,24,33,46,0,1,47,30},
+{48,16,49,0,2,50,32,29},
+{21,51,17,0,3,35,52,53},
+{15,27,54,0,55,4,56,25},
+{21,36,28,1,55,50,6,14},
+{39,27,49,1,31,12,7,53},
+{48,51,23,1,34,4,13,44},
+{42,9,40,1,3,38,32,25},
+{26,43,10,1,2,35,56,41},
+{8,22,54,1,37,5,52,29},
+{15,36,40,30,2,5,13,53},
+{39,9,28,46,2,4,52,20},
+{8,27,17,47,2,38,6,44},
+{45,11,37,2,34,31,3,55},
+{42,51,54,33,2,18,7,14},
+{8,36,49,33,3,4,19,41},
+{39,16,23,47,3,5,56,14},
+{15,22,10,46,3,50,7,44},
+{48,43,54,30,3,12,6,20},
+{21,43,40,47,11,4,7,29},
+{42,16,10,24,37,4,6,53},
+{45,35,50,4,18,12,5,38},
+{26,51,49,46,11,5,6,25},
+{48,9,17,24,55,5,7,41},
+{45,32,13,52,6,7,56,19},
+{45,39,42,21,15,8,26,48},
+{8,51,40,24,31,50,56,20},
+{8,43,23,46,55,18,32,53},
+{45,36,43,9,22,27,16,51},
+{21,9,49,30,37,18,56,44},
+{26,9,54,47,34,50,19,53},
+{48,36,10,47,31,18,52,25},
+{39,51,10,30,55,38,19,29},
+{45,54,17,28,40,49,23,10},
+{39,36,54,24,11,35,32,44},
+{48,22,28,33,11,38,56,53},
+{42,27,23,30,11,50,52,41},
+{42,36,17,46,34,12,56,29},
+{26,16,40,33,55,12,52,44},
+{15,51,28,47,37,12,32,41},
+{39,43,17,33,37,50,13,25},
+{42,22,49,47,55,35,13,20},
+{21,16,54,46,31,38,13,41},
+{45,44,25,20,41,53,14,29},
+{15,43,49,24,34,38,52,14},
+{48,27,40,46,37,35,19,14}
+};
 
 /* Add more functions here
  *
@@ -1951,6 +2013,74 @@ void chaos_mesh( const Router *r, const Flit *f,
   }
 }
 
+void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
+                      OutputSet *outputs, bool inject )
+{ 
+    int in_vc=f->vc;
+    int in_port=in_channel;
+    int out_vc;
+    int out_port=-1;
+    if(in_channel>Hypercubeport){in_port=in_channel-Hypercubeport;}
+    int cur = r->GetID( );
+    int dest = f->dest;
+    int hypercube_mv;
+    int grp_ID= cur/powi(2,Hypercubeport);
+    int dest_grp= dest/powi(2,Hypercubeport);
+    int global_port=-1;
+    cout << "polarfly+ routing start" << endl;
+    
+    //local move calculation
+    hypercube_mv=dest-cur; 
+    if(hypercube_mv<0){hypercube_mv=-hypercube_mv;}
+    hypercube_mv%=powi(2,Hypercubeport);
+
+    //Global port calculation
+    // 1hop
+    for(int i=0; i < Polarflyport; i++){
+        if(polarfly_routing_table[grp_ID][i]==dest_grp){
+            global_port=i;
+	    break;
+	}
+    }
+    // 2hop
+    if(global_port==-1){
+       for(int i=0; i < Polarflyport; i++){
+          for(int j=0; j < Polarflyport; j++){
+              if(polarfly_routing_table[grp_ID][i]==polarfly_routing_table[dest_grp][j]){
+                  global_port=i;
+                  break;
+              }
+	  }
+	  if(global_port > -1){break;}
+       }
+    }
+    //routing 
+    if(in_port < Hypercubeport-1) { 
+	//Local port
+	for(int i = in_port+1 ; i < Hypercubeport; i++){
+	    if((hypercube_mv >> i)%2==1){out_port=i; out_vc=in_vc;};
+	}
+    }
+    if(in_port==Hypercubeport-1 || out_port==-1) {
+        //Local->Global
+        out_port=global_port; out_vc=in_vc;
+    }
+    if(in_port>=Hypercubeport) { 
+	//Global port
+        for(int i = in_port+1 ; i < Hypercubeport; i++){
+            if((hypercube_mv >> i)%2==1){out_port=i; out_vc=in_vc+1;};
+        }
+    }
+    cout << "in: port" << in_port << "-vc" << in_vc << "  out: port" << out_port << "-vc" << out_vc << endl;
+    //achieve the destination, VC changes
+    //if ( f->type == Flit::READ_REQUEST ||  f->type == Flit::WRITE_REQUEST) {
+    //    out_vc+=3;
+    //} 
+
+    outputs->Clear( );
+    outputs->AddRange( out_port, out_vc, out_vc );
+}
+
 //=============================================================
 
 void InitializeRoutingMap( const Configuration & config )
@@ -1996,6 +2126,9 @@ void InitializeRoutingMap( const Configuration & config )
 
   /* Register routing functions here */
 
+  //gRoutingFunctionMap["twolevelbypass_polarflyplus"]         = &polarflyplus_twolevel;
+  gRoutingFunctionMap["dim_order_polarflyplus"]         = &dim_order_polarflyplus;
+  gRoutingFunctionMap["dor_polarflyplus"]         = &dim_order_polarflyplus;
   // ===================================================
   // Balfour-Schultz
   gRoutingFunctionMap["nca_fattree"]         = &fattree_nca;
