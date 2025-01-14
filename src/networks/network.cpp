@@ -192,8 +192,10 @@ void Network::ReadInputs( )
   for(deque<TimedModule *>::const_iterator iter = _timed_modules.begin();
       iter != _timed_modules.end();
       ++iter) {
+	   cout << "      network ReadInputs() iter" << *iter << " to " << *_timed_modules.end() <<endl;
     (*iter)->ReadInputs( );
   }
+  cout << "      network ReadInputs() end" <<endl;
 }
 
 void Network::Evaluate( )

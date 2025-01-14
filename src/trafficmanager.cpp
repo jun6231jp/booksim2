@@ -925,6 +925,8 @@ void TrafficManager::_Inject(){
         for ( int c = 0; c < _classes; ++c ) {
             // Potentially generate packets for any (input,class)
             // that is currently empty
+	
+	    cout << "      TrafficManager _Inject() input" << input << " class" << c << endl;
             if ( _partial_packets[input][c].empty() ) {
                 bool generated = false;
                 while( !generated && ( _qtime[input][c] <= _time ) ) {
@@ -963,10 +965,12 @@ void TrafficManager::_Step( )
     }
 
     vector<map<int, Flit *> > flits(_subnets);
-  
-    for ( int subnet = 0; subnet < _subnets; ++subnet ) {
+    cout << "   TrafficManager Step() sim state " << _sim_state << endl;
+   for ( int subnet = 0; subnet < _subnets; ++subnet ) {
         for ( int n = 0; n < _nodes; ++n ) {
             Flit * const f = _net[subnet]->ReadFlit( n );
+	    cout << "    TrafficManager Step() subnet"<< subnet << " node" << n << " Flit"<< f << endl;
+	    //cout << "    TrafficManager Step() Flit watch "<< f->watch << endl;
             if ( f ) {
                 if(f->watch) {
                     *gWatchOut << GetSimTime() << " | "
@@ -984,8 +988,9 @@ void TrafficManager::_Step( )
                     }
                 }
             }
-
+            cout << "    TrafficManager Step() read credit " << n << endl;
             Credit * const c = _net[subnet]->ReadCredit( n );
+	    cout << "     TrafficManager Step() ReadCredit " << c << endl;
             if ( c ) {
 #ifdef TRACK_FLOWS
                 for(set<int>::const_iterator iter = c->vc.begin(); iter != c->vc.end(); ++iter) {
@@ -1001,13 +1006,15 @@ void TrafficManager::_Step( )
                 c->Free();
             }
         }
+	cout << "    TrafficManager Step() read input subnet "<< subnet << endl;
         _net[subnet]->ReadInputs( );
+	cout << "    TrafficManager Step() read input complete" << endl;
     }
-  
+    cout << "    TrafficManager Step() inject start" << endl;  
     if ( !_empty_network ) {
         _Inject();
     }
-
+    cout << "    TrafficManager Step() inject complete" << endl;
     for(int subnet = 0; subnet < _subnets; ++subnet) {
 
         for(int n = 0; n < _nodes; ++n) {
@@ -1434,7 +1441,10 @@ bool TrafficManager::_SingleSim( )
     
     
         for ( int iter = 0; iter < _sample_period; ++iter )
-            _Step( );
+	{
+	       cout << "  TrafficManager SingleSim() step" << iter << endl;	
+		_Step( );
+	}
     
         //cout << _sim_state << endl;
 
@@ -1636,12 +1646,12 @@ bool TrafficManager::Run( )
         _sim_state    = warming_up;
   
         _ClearStats( );
-
+        cout << "TrafficManager Run() clear status" << endl;
         for(int c = 0; c < _classes; ++c) {
             _traffic_pattern[c]->reset();
             _injection_process[c]->reset();
         }
-
+        cout << "TrafficManager Run() injection reset" << endl;
         if ( !_SingleSim( ) ) {
             cout << "Simulation unstable, ending ..." << endl;
             return false;

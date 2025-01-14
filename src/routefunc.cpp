@@ -2020,7 +2020,7 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
     int in_port=in_channel;
     int out_vc;
     int out_port=-1;
-    if(in_channel>Hypercubeport){in_port=in_channel-Hypercubeport;}
+    //if(in_channel>Hypercubeport){in_port=in_channel-Hypercubeport;}
     int cur = r->GetID( );
     int dest = f->dest;
     int hypercube_mv;
