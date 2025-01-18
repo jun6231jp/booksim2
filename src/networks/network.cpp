@@ -189,10 +189,12 @@ void Network::_Alloc( )
 
 void Network::ReadInputs( )
 {
+	int cnt=0;
   for(deque<TimedModule *>::const_iterator iter = _timed_modules.begin();
       iter != _timed_modules.end();
       ++iter) {
-	   cout << "      network ReadInputs() iter" << *iter << " to " << *_timed_modules.end() <<endl;
+cnt++; 
+	   cout << "      network ReadInputs() iter " << *iter << " #" << cnt << endl;
     (*iter)->ReadInputs( );
   }
   cout << "      network ReadInputs() end" <<endl;

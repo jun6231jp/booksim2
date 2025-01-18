@@ -36,8 +36,8 @@
 #include "globals.hpp"
 
 #define POLAR_LATENCY 
-#define Hypercubeport 7
-#define Polarflyport 8
+#define Hypercubeport 1
+#define Polarflyport 3
 
 int gP_polar, gA_polar, gG_polar;
 
@@ -45,7 +45,7 @@ int gP_polar, gA_polar, gG_polar;
 //Polarfly  : Global
 vector<vector<string>> dbg;
 // node0-p0, node1-p0, hypercube
-
+/*
 int polarfly_table[57][8]=
 {
 {8,9,10,11,12,13,14,0},
@@ -105,6 +105,36 @@ int polarfly_table[57][8]=
 {45,44,25,20,41,53,14,29},
 {15,43,49,24,34,38,52,14},
 {48,27,40,46,37,35,19,14}
+};
+*/
+/*
+int polarfly_table[13][4]=
+{
+{4,5,6,0},
+{7,8,6,1},
+{7,5,9,2},
+{4,8,9,3},
+{7,10,0,3},
+{11,8,0,2},
+{12,9,0,1},
+{4,10,1,2},
+{11,5,1,3},
+{12,6,2,3},
+{12,11,7,4},
+{12,10,8,5},
+{11,10,9,6}
+};
+*/
+
+int polarfly_table[7][3]=
+{
+{3,4,0},
+{5,4,1},
+{6,4,2},
+{6,5,0},
+{0,1,2},
+{6,3,1},
+{5,3,2}
 };
 
 
@@ -230,20 +260,22 @@ void PolarFlyplusNew::_ComputeSize( const Configuration &config )
   // LIMITATION
   // _n == # of dimensions within a group
   // _p == # of processors within a router
-  _p = config.GetInt( "k" );// # of nodes in each switch=1
-  _n = config.GetInt( "n" );
+  //_p = config.GetInt( "k" );// # of nodes in each switch=1
+  //_n = config.GetInt( "n" );
   _p=1;
   _n=1;
   assert(_n==1);
 
-  _k = Polarflyport+Hypercubeport+1; // Polarfly + Hyoercube+  CPU  
+  _k = Polarflyport + Hypercubeport + 1; // Polarfly + Hyoercube+  CPU  
 
   // FIX...
   gK = _p; gN = _n;
 
   //group : Hypercube
   _a = powi(2,Hypercubeport);
-  _g = 57; //F7 Polarfly
+  //_g = 57; //F7 Polarfly
+  //_g = 13; //F3 Polarfly
+  _g = 7; //F2 Polarfly	    
   _nodes   = _a * _p * _g;
  
   _num_of_switch = _nodes / _p;
@@ -289,7 +321,6 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     _routers[node] = Router::NewRouter( config, this, router_name.str( ), 
 					node, _k, _k );
     _timed_modules.push_back(_routers[node]);
-    //cout << "rounters created" << endl;
     router_name.str("");
 
     for ( int cnt = 0; cnt < _p; ++cnt ) {
@@ -303,8 +334,6 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
       _routers[node]->AddOutputChannel( _eject[c], _eject_cred[c] );
 
     }
-    //cout << "inject, eject connected" << endl;
-    //
 
     if (_n > 1 )  { cout << " ERROR: n>1 dimension NOT supported yet... " << endl; exit(-1); }
 
@@ -325,12 +354,11 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
 	_chan_cred[_output]->SetLatency(10);
 #endif
       }
-     //cout << "Hypercube output channels connected" << endl;
     //add polarfly output channel
     for ( int cnt = 0; cnt < Polarflyport; ++cnt ) {
       _output = (Polarflyport+Hypercubeport) * node + Hypercubeport + cnt;
       //_chan[_output].global = true;
-      if(grp_ID <= 7 && cnt==7) continue; //red group : no self-connection
+      if(grp_ID < Polarflyport  && cnt==Polarflyport-1) continue; //red group : no self-connection
       dbg.push_back({ to_string(_output), "Polarfly","node"+to_string(node)+"-port"+to_string(cnt+Hypercubeport) });
       _routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
 #ifdef POLAR_LATENCY
@@ -338,7 +366,6 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
       _chan_cred[_output]->SetLatency(10);
 #endif
     }
-    //cout << "Polarfly output channels connected" << endl;
 
     //********************************************
     //   connect INPUT channels
@@ -349,11 +376,10 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     //hypercube calculation
     for ( int cnt = 0; cnt < Hypercubeport; ++cnt ) {
 	_input = (node ^ (1<<cnt)) * (Polarflyport+Hypercubeport) + cnt;
-       dbg[ch_count].push_back ("node"+to_string(node ^ (1<<cnt))+"-port"+to_string(cnt));
+       dbg[ch_count].push_back (to_string(_input)+" node"+to_string(node ^ (1<<cnt))+"-port"+to_string(cnt));
        ch_count++;
 	_routers[node]->AddInputChannel( _chan[_input], _chan_cred[_input] );
       }
-    //cout << "Hypercube input channels connected" << endl;
     //Polarfly  table refer
     int dest_polarport;
     for ( int cnt = 0; cnt < Polarflyport; ++cnt ) {
@@ -367,12 +393,11 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
       int dest_node_add = polarfly_table[grp_ID][cnt]*powi(2,Hypercubeport)+hyperadd;
       //cout << hyperadd << " " << polarfly_table[grp_ID][cnt] << endl; 
       _input = dest_node_add * (Polarflyport+Hypercubeport) + dest_polarport;
-      if(grp_ID <= 7 && cnt==7) continue; //red group : no self-connection
-       dbg[ch_count].push_back ("node"+to_string(dest_node_add)+"-port"+to_string(dest_polarport));
+      if(grp_ID < Polarflyport && cnt== Polarflyport-1) continue; //red group : no self-connection
+       dbg[ch_count].push_back (to_string(_input)+" node"+to_string(dest_node_add)+"-port"+to_string(dest_polarport));
        ch_count++;
       _routers[node]->AddInputChannel( _chan[_input], _chan_cred[_input] );
     }
-    //cout << "Polarfly input channels connected" << endl;
 
   }
 

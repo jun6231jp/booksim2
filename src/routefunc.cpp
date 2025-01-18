@@ -52,14 +52,15 @@
 #include "qtree.hpp"
 #include "cmesh.hpp"
 
-#define Hypercubeport 7
-#define Polarflyport 8
+#define Hypercubeport 1
+#define Polarflyport 3
 
 map<string, tRoutingFunction> gRoutingFunctionMap;
 
 /* Global information used by routing functions */
 
 int gNumVCs;
+/*
 int polarfly_routing_table[57][8]=
 {
 {8,9,10,11,12,13,14,0},
@@ -120,6 +121,37 @@ int polarfly_routing_table[57][8]=
 {15,43,49,24,34,38,52,14},
 {48,27,40,46,37,35,19,14}
 };
+*/
+/*
+int polarfly_routing_table[13][4]=
+{
+{4,5,6,0},
+{7,8,6,1},
+{7,5,9,2},
+{4,8,9,3},
+{7,10,0,3},
+{11,8,0,2},
+{12,9,0,1},
+{4,10,1,2},
+{11,5,1,3},
+{12,6,2,3},
+{12,11,7,4},
+{12,10,8,5},
+{11,10,9,6}
+};
+*/
+
+int polarfly_routing_table[7][3]=
+{
+{3,4,0},
+{5,4,1},
+{6,4,2},
+{6,5,0},
+{0,1,2},
+{6,3,1},
+{5,3,2}
+};
+
 
 /* Add more functions here
  *
@@ -2015,19 +2047,20 @@ void chaos_mesh( const Router *r, const Flit *f,
 
 void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
                       OutputSet *outputs, bool inject )
-{ 
+{
+    cout << "     routefunc polarfly+ routing start" << endl;
     int in_vc=f->vc;
     int in_port=in_channel;
     int out_vc;
     int out_port=-1;
     //if(in_channel>Hypercubeport){in_port=in_channel-Hypercubeport;}
+    cout << "     routefunc polarfly+ routing router getID" << endl;
     int cur = r->GetID( );
     int dest = f->dest;
     int hypercube_mv;
-    int grp_ID= cur/powi(2,Hypercubeport);
-    int dest_grp= dest/powi(2,Hypercubeport);
+    int grp_ID= cur>>Hypercubeport;
+    int dest_grp= dest>>Hypercubeport;
     int global_port=-1;
-    cout << "polarfly+ routing start" << endl;
     
     //local move calculation
     hypercube_mv=dest-cur; 
@@ -2036,7 +2069,7 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 
     //Global port calculation
     // 1hop
-    for(int i=0; i < Polarflyport; i++){
+    for(int i=0, global_port=-1; i < Polarflyport; i++){
         if(polarfly_routing_table[grp_ID][i]==dest_grp){
             global_port=i;
 	    break;
@@ -2054,11 +2087,13 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 	  if(global_port > -1){break;}
        }
     }
+    assert(global_port>-1);
     //routing 
+    out_port=-1;
     if(in_port < Hypercubeport-1) { 
 	//Local port
 	for(int i = in_port+1 ; i < Hypercubeport; i++){
-	    if((hypercube_mv >> i)%2==1){out_port=i; out_vc=in_vc;};
+	    if((hypercube_mv >> i)%2==1){out_port=i; out_vc=in_vc;}
 	}
     }
     if(in_port==Hypercubeport-1 || out_port==-1) {
@@ -2128,7 +2163,7 @@ void InitializeRoutingMap( const Configuration & config )
 
   //gRoutingFunctionMap["twolevelbypass_polarflyplus"]         = &polarflyplus_twolevel;
   gRoutingFunctionMap["dim_order_polarflyplus"]         = &dim_order_polarflyplus;
-  gRoutingFunctionMap["dor_polarflyplus"]         = &dim_order_polarflyplus;
+  //gRoutingFunctionMap["dor_polarflyplus"]         = &dim_order_polarflyplus;
   // ===================================================
   // Balfour-Schultz
   gRoutingFunctionMap["nca_fattree"]         = &fattree_nca;

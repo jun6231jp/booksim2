@@ -990,7 +990,6 @@ void TrafficManager::_Step( )
             }
             cout << "    TrafficManager Step() read credit " << n << endl;
             Credit * const c = _net[subnet]->ReadCredit( n );
-	    cout << "     TrafficManager Step() ReadCredit " << c << endl;
             if ( c ) {
 #ifdef TRACK_FLOWS
                 for(set<int>::const_iterator iter = c->vc.begin(); iter != c->vc.end(); ++iter) {
@@ -1016,9 +1015,9 @@ void TrafficManager::_Step( )
     }
     cout << "    TrafficManager Step() inject complete" << endl;
     for(int subnet = 0; subnet < _subnets; ++subnet) {
-
+       
         for(int n = 0; n < _nodes; ++n) {
-
+            
             Flit * f = NULL;
 
             BufferState * const dest_buf = _buf_states[n][subnet];
@@ -1026,7 +1025,7 @@ void TrafficManager::_Step( )
             int const last_class = _last_class[n][subnet];
 
             int class_limit = _classes;
-
+            cout << "    TrafficManager Step() subnet" << subnet <<"/" <<_subnets-1 <<" node" << n << " lastclass" << last_class << endl;
             if(_hold_switch_for_packet) {
                 list<Flit *> const & pp = _partial_packets[n][last_class];
                 if(!pp.empty() && !pp.front()->head && 
@@ -1039,7 +1038,6 @@ void TrafficManager::_Step( )
                     --class_limit;
                 }
             }
-
             for(int i = 1; i <= class_limit; ++i) {
 
                 int const c = (last_class + i) % _classes;
@@ -1063,10 +1061,10 @@ void TrafficManager::_Step( )
                 }
 
                 if(cf->head && cf->vc == -1) { // Find first available VC
-	  
+	            cout << "    TrafficManager Step() Find first available VC" << endl; 
                     OutputSet route_set;
                     _rf(NULL, cf, -1, &route_set, true);
-                    set<OutputSet::sSetElement> const & os = route_set.GetSet();
+		    set<OutputSet::sSetElement> const & os = route_set.GetSet();
                     assert(os.size() == 1);
                     OutputSet::sSetElement const & se = *os.begin();
                     assert(se.output_port == -1);
@@ -1086,7 +1084,6 @@ void TrafficManager::_Step( )
                         cf->vc = vc_start;
                         _rf(router, cf, in_channel, &cf->la_route_set, false);
                         cf->vc = -1;
-
                         if(cf->watch) {
                             *gWatchOut << GetSimTime() << " | "
                                        << "node" << n << " | "
@@ -1157,7 +1154,6 @@ void TrafficManager::_Step( )
                     }
                 }
             }
-
             if(f) {
 
                 assert(f->subnetwork == subnet);
