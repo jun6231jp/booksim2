@@ -36,7 +36,7 @@
 #include "globals.hpp"
 
 #define POLAR_LATENCY 
-#define Hypercubeport 1
+#define Hypercubeport 4
 #define Polarflyport 3
 
 int gP_polar, gA_polar, gG_polar;
@@ -307,8 +307,8 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
 	_routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
 
 #ifdef POLAR_LATENCY
-	_chan[_output]->SetLatency(10);
-	_chan_cred[_output]->SetLatency(10);
+	_chan[_output]->SetLatency(1);
+	_chan_cred[_output]->SetLatency(1);
 #endif
       }
     //add polarfly output channel
@@ -319,8 +319,8 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
       dbg.push_back({ to_string(_output), "Polarfly","node"+to_string(node)+"-port"+to_string(cnt+Hypercubeport) });
       _routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
 #ifdef POLAR_LATENCY
-      _chan[_output]->SetLatency(10);
-      _chan_cred[_output]->SetLatency(10);
+      _chan[_output]->SetLatency(1);
+      _chan_cred[_output]->SetLatency(1);
 #endif
     }
 

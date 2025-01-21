@@ -985,7 +985,10 @@ void TrafficManager::_Step( )
                                << "." << endl;
                 }
 		cout << "   TrafficManager Step() eject flit id:" << f->pid << " n:" << n << " src:" << f->src << " dest:" << f->dest << endl;
-                flits[subnet].insert(make_pair(n, f));
+               // if(f->dest != n) f->dest=n ; // for dbg
+
+
+		flits[subnet].insert(make_pair(n, f));
                 if((_sim_state == warming_up) || (_sim_state == running)) {
                     ++_accepted_flits[f->cl][n];
                     if(f->tail) {

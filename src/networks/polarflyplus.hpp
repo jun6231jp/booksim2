@@ -71,4 +71,4 @@ void ugal_polarflyplusnew( const Router *r, const Flit *f, int in_channel,
 void min_polarflyplusnew( const Router *r, const Flit *f, int in_channel, 
 		       OutputSet *outputs, bool inject );
 
-#endif 
+#endif
