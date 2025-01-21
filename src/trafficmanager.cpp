@@ -643,7 +643,14 @@ TrafficManager::~TrafficManager( )
 void TrafficManager::_RetireFlit( Flit *f, int dest )
 {
     _deadlock_timer = 0;
-
+    cout <<  "node" << dest << " | "
+                   << "Retiring flit " << f->id
+                   << " (packet id:" << f->pid
+                   << " , src = " << f->src
+                   << ", dest = " << f->dest
+                   << ", hops = " << f->hops
+                   << ", flat = " << f->atime - f->itime
+                   << ")." << endl; 
     assert(_total_in_flight_flits[f->cl].count(f->id) > 0);
     _total_in_flight_flits[f->cl].erase(f->id);
     if(f->record) {
@@ -790,7 +797,7 @@ void TrafficManager::_GeneratePacket( int source, int stype,
     assert(_cur_pid);
     int packet_destination = _traffic_pattern[cl]->dest(source);
 
-    cout << "    TrafficManager GeneratePacket id:" << pid << " source:" << source << " type:" << stype << " class:" << cl << " time:" << time << " dest:" << packet_destination <<endl;
+    cout << "    TrafficManager GeneratePacket id:" << pid << " source:" << source << " type:" << stype << " class:" << cl << " time:" << time << " dest:" << packet_destination << endl;
     bool record = false;
     bool watch = gWatchOut && (_packets_to_watch.count(pid) > 0);
     if(_use_read_write[cl]){
@@ -977,6 +984,7 @@ void TrafficManager::_Step( )
                                << " from VC " << f->vc
                                << "." << endl;
                 }
+		cout << "   TrafficManager Step() eject flit id:" << f->pid << " n:" << n << " src:" << f->src << " dest:" << f->dest << endl;
                 flits[subnet].insert(make_pair(n, f));
                 if((_sim_state == warming_up) || (_sim_state == running)) {
                     ++_accepted_flits[f->cl][n];
@@ -1231,7 +1239,6 @@ void TrafficManager::_Step( )
             map<int, Flit *>::const_iterator iter = flits[subnet].find(n);
             if(iter != flits[subnet].end()) {
                 Flit * const f = iter->second;
-
                 f->atime = _time;
                 if(f->watch) {
                     *gWatchOut << GetSimTime() << " | "

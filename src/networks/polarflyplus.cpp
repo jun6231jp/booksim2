@@ -285,13 +285,11 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     for ( int cnt = 0; cnt < _p; ++cnt ) {
       c = _p * node +  cnt;
       _routers[node]->AddInputChannel( _inject[c], _inject_cred[c] );
-
     }
 
     for ( int cnt = 0; cnt < _p; ++cnt ) {
       c = _p * node +  cnt;
       _routers[node]->AddOutputChannel( _eject[c], _eject_cred[c] );
-
     }
 
     if (_n > 1 )  { cout << " ERROR: n>1 dimension NOT supported yet... " << endl; exit(-1); }
