@@ -52,8 +52,8 @@
 #include "qtree.hpp"
 #include "cmesh.hpp"
 
-#define Hypercubeport 4
-#define Polarflyport 3
+#define Hypercubeport 2
+#define Polarflyport 8
 
 map<string, tRoutingFunction> gRoutingFunctionMap;
 
@@ -61,7 +61,7 @@ map<string, tRoutingFunction> gRoutingFunctionMap;
 
 int gNumVCs;
 
-/*
+
 int polarfly_connection_table[57][8]=
 {
 {8,9,10,11,12,13,14,0},
@@ -122,7 +122,7 @@ int polarfly_connection_table[57][8]=
 {15,43,49,24,34,38,52,14},
 {48,27,40,46,37,35,19,14}
 };
-*/
+
 /*
 int polarfly_connection_table[13][4]=
 {
@@ -141,7 +141,7 @@ int polarfly_connection_table[13][4]=
 {11,10,9,6}
 };
 */
-
+/*
 int polarfly_connection_table[7][3]=
 {
 {3,4,0},
@@ -152,7 +152,7 @@ int polarfly_connection_table[7][3]=
 {6,3,1},
 {5,3,2}
 };
-
+*/
 /* Add more functions here
  *
  */

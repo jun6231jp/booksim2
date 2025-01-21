@@ -36,8 +36,9 @@
 #include "globals.hpp"
 
 #define POLAR_LATENCY 
-#define Hypercubeport 4
-#define Polarflyport 3
+#define Hypercubeport 2
+#define Polarflyport 8
+#define Polarflysize 57
 
 int gP_polar, gA_polar, gG_polar;
 
@@ -45,7 +46,7 @@ int gP_polar, gA_polar, gG_polar;
 //Polarfly  : Global
 vector<vector<string>> dbg;
 // node0-p0, node1-p0, hypercube
-/*
+
 int polarfly_table[57][8]=
 {
 {8,9,10,11,12,13,14,0},
@@ -106,7 +107,7 @@ int polarfly_table[57][8]=
 {15,43,49,24,34,38,52,14},
 {48,27,40,46,37,35,19,14}
 };
-*/
+
 /*
 int polarfly_table[13][4]=
 {
@@ -125,7 +126,7 @@ int polarfly_table[13][4]=
 {11,10,9,6}
 };
 */
-
+/*
 int polarfly_table[7][3]=
 {
 {3,4,0},
@@ -136,7 +137,7 @@ int polarfly_table[7][3]=
 {6,3,1},
 {5,3,2}
 };
-
+*/
 
 //calculate the hop count between src and destination
 int polarflyplusnew_hopcnt(int src, int dest) 
@@ -228,9 +229,9 @@ void PolarFlyplusNew::_ComputeSize( const Configuration &config )
 
   //group : Hypercube
   _a = powi(2,Hypercubeport);
-  //_g = 57; //F7 Polarfly
+  _g = Polarflysize; 
   //_g = 13; //F3 Polarfly
-  _g = 7; //F2 Polarfly	    
+  //_g = 7; //F2 Polarfly	    
   _nodes   = _a * _p * _g;
  
   _num_of_switch = _nodes / _p;
