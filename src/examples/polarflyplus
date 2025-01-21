@@ -29,7 +29,7 @@
 
 // Topology
 topology = polarflyplus;
-k = 1;
+k = 5;
 n = 1;
 // Routing
 routing_function = dim_order;

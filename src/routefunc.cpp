@@ -737,6 +737,7 @@ void dor_next_torus( int cur, int dest, int in_port,
 
 void dim_order_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
+	cout << "     routefunc mesh routing start : cur " << r << " dest " << f->dest << " in_port " << in_channel << " in_vc " << f->vc << endl;
   int out_port = inject ? -1 : dor_next_mesh( r->GetID( ), f->dest );
   
   int vcBegin = 0, vcEnd = gNumVCs-1;
@@ -2048,28 +2049,37 @@ void chaos_mesh( const Router *r, const Flit *f,
 void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
                       OutputSet *outputs, bool inject )
 {
-    cout << "     routefunc polarfly+ routing start" << endl;
+
+  int vcBegin = 0, vcEnd = gNumVCs-1;
+  //cout << "        routefunc polarfly+ vc:" << f->vc << " begin:" << vcBegin << " end:" << vcEnd << endl;
+  assert(((f->vc >= vcBegin) && (f->vc <= vcEnd)) || (inject && (f->vc < 0)));
+
+   int out_port=-1;
+   int out_vc=0;
+   if(inject) {
+    out_port = -1;
+   } else {
+    cout << "        routefunc polarfly+ router:" << r->FullName() << " id:" << f->pid << " src:" << f->src << " dest:" << f->dest << " in_port:" << in_channel << " in_vc:" << f->vc ;
     int in_vc=f->vc;
     int in_port=in_channel;
-    int out_vc;
-    int out_port=-1;
     //if(in_channel>Hypercubeport){in_port=in_channel-Hypercubeport;}
-    cout << "     routefunc polarfly+ routing router getID" << endl;
     int cur = r->GetID( );
     int dest = f->dest;
     int hypercube_mv;
     int grp_ID= cur>>Hypercubeport;
     int dest_grp= dest>>Hypercubeport;
-    int global_port=-1;
+    int global_port;
     
     //local move calculation
-    hypercube_mv=dest-cur; 
-    if(hypercube_mv<0){hypercube_mv=-hypercube_mv;}
-    hypercube_mv%=powi(2,Hypercubeport);
-
+    //hypercube_mv=dest-cur; 
+    //if(hypercube_mv<0){hypercube_mv=-hypercube_mv;}
+    //hypercube_mv%=powi(2,Hypercubeport);
+    hypercube_mv=(dest & ((1<<Hypercubeport)-1))^(cur & ((1<<Hypercubeport)-1));
+    //cout << "     routefunc polarfly+ hcube_mv:" << hypercube_mv << endl;
     //Global port calculation
     // 1hop
-    for(int i=0, global_port=-1; i < Polarflyport; i++){
+    global_port=-1;
+    for(int i=0; i < Polarflyport; i++){
         if(polarfly_routing_table[grp_ID][i]==dest_grp){
             global_port=i;
 	    break;
@@ -2090,28 +2100,36 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
     assert(global_port>-1);
     //routing 
     out_port=-1;
-    if(in_port < Hypercubeport-1) { 
+    if(f->src==cur) in_port=-1;
+    if(in_port < Hypercubeport-1 || f->src==cur) { 
 	//Local port
 	for(int i = in_port+1 ; i < Hypercubeport; i++){
-	    if((hypercube_mv >> i)%2==1){out_port=i; out_vc=in_vc;}
+	    if(((hypercube_mv >> i)&1)==1){out_port=i; out_vc=in_vc;}
 	}
     }
-    if(in_port==Hypercubeport-1 || out_port==-1) {
+    else if(in_port == Hypercubeport-1 || out_port==-1) {
         //Local->Global
-        out_port=global_port; out_vc=in_vc;
+        out_port=Hypercubeport+global_port; out_vc=in_vc;
     }
-    if(in_port>=Hypercubeport) { 
+    else if(in_port>=Hypercubeport || out_port==-1) { 
 	//Global port
+        out_vc=in_vc+1;
+	//Hypercube
         for(int i = in_port+1 ; i < Hypercubeport; i++){
-            if((hypercube_mv >> i)%2==1){out_port=i; out_vc=in_vc+1;};
+            if(((hypercube_mv >> i)&1)==1){out_port=i;}
+        }
+        //Polarfly
+	if(in_port==Hypercubeport-1 || out_port==-1) {
+            out_port=Hypercubeport+global_port; 
         }
     }
-    cout << "in: port" << in_port << "-vc" << in_vc << "  out: port" << out_port << "-vc" << out_vc << endl;
+    cout << "  outport:" << out_port << " outvc:" << out_vc << endl;
+    //cout << "in: port" << in_port << "-vc" << in_vc << "  out: port" << out_port << "-vc" << out_vc << endl;
     //achieve the destination, VC changes
     //if ( f->type == Flit::READ_REQUEST ||  f->type == Flit::WRITE_REQUEST) {
     //    out_vc+=3;
     //} 
-
+  }
     outputs->Clear( );
     outputs->AddRange( out_port, out_vc, out_vc );
 }
@@ -2161,9 +2179,7 @@ void InitializeRoutingMap( const Configuration & config )
 
   /* Register routing functions here */
 
-  //gRoutingFunctionMap["twolevelbypass_polarflyplus"]         = &polarflyplus_twolevel;
   gRoutingFunctionMap["dim_order_polarflyplus"]         = &dim_order_polarflyplus;
-  //gRoutingFunctionMap["dor_polarflyplus"]         = &dim_order_polarflyplus;
   // ===================================================
   // Balfour-Schultz
   gRoutingFunctionMap["nca_fattree"]         = &fattree_nca;

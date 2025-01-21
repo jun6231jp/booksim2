@@ -194,10 +194,9 @@ void Network::ReadInputs( )
       iter != _timed_modules.end();
       ++iter) {
 cnt++; 
-	   cout << "      network ReadInputs() iter " << *iter << " #" << cnt << endl;
+//cout << "      network ReadInputs() " << (*iter)->FullName() << "  Module type: " << typeid(**iter).name() << " #" << cnt << endl;
     (*iter)->ReadInputs( );
   }
-  cout << "      network ReadInputs() end" <<endl;
 }
 
 void Network::Evaluate( )

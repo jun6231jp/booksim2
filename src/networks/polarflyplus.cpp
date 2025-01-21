@@ -200,51 +200,6 @@ int polarflyplusnew_hopcnt(int src, int dest)
 }
 
 
-//packet output port based on the source, destination and current location
-int polarflyplus_port(int rID, int source, int dest){
-  int _grp_num_routers= gA_polar;
-  int _grp_num_nodes =_grp_num_routers*gP_polar;
-
-  int out_port = -1;
-  int grp_ID = int(rID / _grp_num_routers); 
-  int dest_grp_ID = int(dest/_grp_num_nodes);
-  int grp_output=-1;
-  int grp_RID=-1;
-  
-  //which router within this group the packet needs to go to
-  if (dest_grp_ID == grp_ID) {
-    grp_RID = int(dest / gP_polar);
-  } else {
-    if (grp_ID > dest_grp_ID) {
-      grp_output = dest_grp_ID;
-    } else {
-      grp_output = dest_grp_ID - 1;
-    }
-    grp_RID = int(grp_output /gP_polar) + grp_ID * _grp_num_routers;
-  }
-
-  //At the last hop
-  if (dest >= rID*gP_polar && dest < (rID+1)*gP_polar) {    
-    out_port = dest%gP_polar;
-  } else if (grp_RID == rID) {
-    //At the optical link
-    out_port = gP_polar + (gA_polar-1) + grp_output %(gP_polar);
-  } else {
-    //need to route within a group
-    assert(grp_RID!=-1);
-
-    if (rID < grp_RID){
-      out_port = (grp_RID % _grp_num_routers) - 1 + gP_polar;
-    }else{
-      out_port = (grp_RID % _grp_num_routers) + gP_polar;
-    }
-  }  
- 
-  assert(out_port!=-1);
-  return out_port;
-}
-
-
 PolarFlyplusNew::PolarFlyplusNew( const Configuration &config, const string & name ) :
   Network( config, name )
 {
@@ -316,9 +271,13 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     grp_ID = (int) (node/_a);
     router_name << "router";
     
-    router_name << "_" <<  node ;
+    //router_name << "_" <<  node ;
+    for(int i = 0 ; i < Hypercubeport; i++){
+     router_name << "_" << ((node >> i)%2) ;
+    }
+    router_name << "_" << (node >> Hypercubeport);
     //cout << router_name.str( ) << endl;
-    _routers[node] = Router::NewRouter( config, this, router_name.str( ), 
+    _routers[node] = Router::NewRouter( config, this, router_name.str(), 
 					node, _k, _k );
     _timed_modules.push_back(_routers[node]);
     router_name.str("");
@@ -358,7 +317,7 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     for ( int cnt = 0; cnt < Polarflyport; ++cnt ) {
       _output = (Polarflyport+Hypercubeport) * node + Hypercubeport + cnt;
       //_chan[_output].global = true;
-      if(grp_ID < Polarflyport  && cnt==Polarflyport-1) continue; //red group : no self-connection
+      //if(grp_ID < Polarflyport  && cnt==Polarflyport-1) continue; //red group : no self-connection
       dbg.push_back({ to_string(_output), "Polarfly","node"+to_string(node)+"-port"+to_string(cnt+Hypercubeport) });
       _routers[node]->AddOutputChannel( _chan[_output], _chan_cred[_output] );
 #ifdef POLAR_LATENCY
@@ -393,7 +352,7 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
       int dest_node_add = polarfly_table[grp_ID][cnt]*powi(2,Hypercubeport)+hyperadd;
       //cout << hyperadd << " " << polarfly_table[grp_ID][cnt] << endl; 
       _input = dest_node_add * (Polarflyport+Hypercubeport) + dest_polarport;
-      if(grp_ID < Polarflyport && cnt== Polarflyport-1) continue; //red group : no self-connection
+      //if(grp_ID < Polarflyport && cnt== Polarflyport-1) continue; //red group : no self-connection
        dbg[ch_count].push_back (to_string(_input)+" node"+to_string(dest_node_add)+"-port"+to_string(dest_polarport));
        ch_count++;
       _routers[node]->AddInputChannel( _chan[_input], _chan_cred[_input] );
@@ -409,17 +368,6 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
   cout<<"Done links"<<endl;
 }
 
-
-int PolarFlyplusNew::GetN( ) const
-{
-  return _n;
-}
-
-int PolarFlyplusNew::GetK( ) const
-{
-  return _k;
-}
-
 void PolarFlyplusNew::InsertRandomFaults( const Configuration &config )
 {
  
@@ -432,162 +380,4 @@ double PolarFlyplusNew::Capacity( ) const
 
 void PolarFlyplusNew::RegisterRoutingFunctions(){
 
-  gRoutingFunctionMap["min_polarflynew"] = &min_polarflyplusnew;
-  gRoutingFunctionMap["ugal_polarflynew"] = &ugal_polarflyplusnew;
-}
-
-
-void min_polarflyplusnew( const Router *r, const Flit *f, int in_channel, 
-		       OutputSet *outputs, bool inject )
-{
-  outputs->Clear( );
-
-  if(inject) {
-    int inject_vc= RandomInt(gNumVCs-1);
-    outputs->AddRange(-1, inject_vc, inject_vc);
-    return;
-  }
-
-  int _grp_num_routers= gA_polar;
-
-  int dest  = f->dest;
-  int rID =  r->GetID(); 
-
-  int grp_ID = int(rID / _grp_num_routers); 
-  int debug = f->watch;
-  int out_port = -1;
-  int out_vc = 0;
-  int dest_grp_ID=-1;
-
-  if ( in_channel < gP_polar ) {
-    out_vc = 0;
-    f->ph = 0;
-    if (dest_grp_ID == grp_ID) {
-      f->ph = 1;
-    }
-  } 
-
-
-  out_port = polarflyplus_port(rID, f->src, dest);
-
-  //optical dateline
-  if (out_port >=gP_polar + (gA_polar-1)) {
-    f->ph = 1;
-  }  
-  
-  out_vc = f->ph;
-  if (debug)
-    *gWatchOut << GetSimTime() << " | " << r->FullName() << " | "
-	       << "	through output port : " << out_port 
-	       << " out vc: " << out_vc << endl;
-  outputs->AddRange( out_port, out_vc, out_vc );
-}
-
-
-//Basic adaptive routign algorithm for the polarfly
-void ugal_polarflyplusnew( const Router *r, const Flit *f, int in_channel, 
-			OutputSet *outputs, bool inject )
-{
-  //need 3 VCs for deadlock freedom
-
-  assert(gNumVCs==3);
-  outputs->Clear( );
-  if(inject) {
-    int inject_vc= RandomInt(gNumVCs-1);
-    outputs->AddRange(-1, inject_vc, inject_vc);
-    return;
-  }
-  
-  //this constant biases the adaptive decision toward minimum routing
-  //negative value woudl biases it towards nonminimum routing
-  int adaptive_threshold = 30;
-
-  int _grp_num_routers= gA_polar;
-  int _grp_num_nodes =_grp_num_routers*gP_polar;
-  int _network_size =  gA_polar * gP_polar * gG_polar;
-
- 
-  int dest  = f->dest;
-  int rID =  r->GetID(); 
-  int grp_ID = (int) (rID / _grp_num_routers);
-  int dest_grp_ID = int(dest/_grp_num_nodes);
-
-  int debug = f->watch;
-  int out_port = -1;
-  int out_vc = 0;
-  int min_queue_size;
-  int nonmin_queue_size;
-  int intm_grp_ID;
-  int intm_rID;
-
-  if(debug){
-    cout<<"At router "<<rID<<endl;
-  }
-  int min_router_output, nonmin_router_output;
-  
-  //at the source router, make the adaptive routing decision
-  if ( in_channel < gP_polar )   {
-    //dest are in the same group, only use minimum routing
-    if (dest_grp_ID == grp_ID) {
-      f->ph = 2;
-    } else {
-      //select a random node
-      f->intm =RandomInt(_network_size - 1);
-      intm_grp_ID = (int)(f->intm/_grp_num_nodes);
-      if (debug){
-	cout<<"Intermediate node "<<f->intm<<" grp id "<<intm_grp_ID<<endl;
-      }
-      
-      //random intermediate are in the same group, use minimum routing
-      if(grp_ID == intm_grp_ID){
-	f->ph = 1;
-      } else {
-	//congestion metrics using queue length, obtained by GetUsedCredit()
-	min_router_output = polarflyplus_port(rID, f->src, f->dest); 
-      	min_queue_size = max(r->GetUsedCredit(min_router_output), 0) ; 
-
-      
-	nonmin_router_output = polarflyplus_port(rID, f->src, f->intm);
-	nonmin_queue_size = max(r->GetUsedCredit(nonmin_router_output), 0);
-
-	//congestion comparison, could use hopcnt instead of 1 and 2
-	if ((1 * min_queue_size ) <= (2 * nonmin_queue_size)+adaptive_threshold ) {	  
-	  if (debug)  cout << " MINIMAL routing " << endl;
-	  f->ph = 1;
-	} else {
-	  f->ph = 0;
-	}
-      }
-    }
-  }
-
-  //transition from nonminimal phase to minimal
-  if(f->ph==0){
-    intm_rID= (int)(f->intm/gP_polar);
-    if( rID == intm_rID){
-      f->ph = 1;
-    }
-  }
-
-  //port assignement based on the phase
-  if(f->ph == 0){
-    out_port = polarflyplus_port(rID, f->src, f->intm);
-  } else if(f->ph == 1){
-    out_port = polarflyplus_port(rID, f->src, f->dest);
-  } else if(f->ph == 2){
-    out_port = polarflyplus_port(rID, f->src, f->dest);
-  } else {
-    assert(false);
-  }
-
-
-  //optical dateline
-  if (f->ph == 1 && out_port >=gP_polar + (gA_polar-1)) {
-    f->ph = 2;
-  }  
-
-  //vc assignemnt based on phase
-  out_vc = f->ph;
-
-  outputs->AddRange( out_port, out_vc, out_vc );
 }

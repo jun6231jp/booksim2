@@ -102,7 +102,7 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
     if(rf_iter == gRoutingFunctionMap.end()) {
         Error("Invalid routing function: " + rf);
     }
-    _rf = rf_iter->second;
+    _rf = rf_iter->second; //first : key,  second : value
   
     _lookahead_routing = !config.GetInt("routing_delay");
     _noq = config.GetInt("noq");
@@ -646,12 +646,10 @@ void TrafficManager::_RetireFlit( Flit *f, int dest )
 
     assert(_total_in_flight_flits[f->cl].count(f->id) > 0);
     _total_in_flight_flits[f->cl].erase(f->id);
-  
     if(f->record) {
         assert(_measured_in_flight_flits[f->cl].count(f->id) > 0);
         _measured_in_flight_flits[f->cl].erase(f->id);
     }
-
     if ( f->watch ) { 
         *gWatchOut << GetSimTime() << " | "
                    << "node" << dest << " | "
@@ -786,12 +784,13 @@ void TrafficManager::_GeneratePacket( int source, int stype,
                                       int cl, int time )
 {
     assert(stype!=0);
-
     Flit::FlitType packet_type = Flit::ANY_TYPE;
     int size = _GetNextPacketSize(cl); //input size 
     int pid = _cur_pid++;
     assert(_cur_pid);
     int packet_destination = _traffic_pattern[cl]->dest(source);
+
+    cout << "    TrafficManager GeneratePacket id:" << pid << " source:" << source << " type:" << stype << " class:" << cl << " time:" << time << " dest:" << packet_destination <<endl;
     bool record = false;
     bool watch = gWatchOut && (_packets_to_watch.count(pid) > 0);
     if(_use_read_write[cl]){
@@ -926,7 +925,6 @@ void TrafficManager::_Inject(){
             // Potentially generate packets for any (input,class)
             // that is currently empty
 	
-	    cout << "      TrafficManager _Inject() input" << input << " class" << c << endl;
             if ( _partial_packets[input][c].empty() ) {
                 bool generated = false;
                 while( !generated && ( _qtime[input][c] <= _time ) ) {
@@ -969,9 +967,8 @@ void TrafficManager::_Step( )
    for ( int subnet = 0; subnet < _subnets; ++subnet ) {
         for ( int n = 0; n < _nodes; ++n ) {
             Flit * const f = _net[subnet]->ReadFlit( n );
-	    cout << "    TrafficManager Step() subnet"<< subnet << " node" << n << " Flit"<< f << endl;
-	    //cout << "    TrafficManager Step() Flit watch "<< f->watch << endl;
             if ( f ) {
+		//cout <<  " f->dest:"<< f->dest << " id:" << f->id << "-" << f->pid << endl;
                 if(f->watch) {
                     *gWatchOut << GetSimTime() << " | "
                                << "node" << n << " | "
@@ -988,7 +985,6 @@ void TrafficManager::_Step( )
                     }
                 }
             }
-            cout << "    TrafficManager Step() read credit " << n << endl;
             Credit * const c = _net[subnet]->ReadCredit( n );
             if ( c ) {
 #ifdef TRACK_FLOWS
@@ -1005,15 +1001,11 @@ void TrafficManager::_Step( )
                 c->Free();
             }
         }
-	cout << "    TrafficManager Step() read input subnet "<< subnet << endl;
         _net[subnet]->ReadInputs( );
-	cout << "    TrafficManager Step() read input complete" << endl;
     }
-    cout << "    TrafficManager Step() inject start" << endl;  
     if ( !_empty_network ) {
         _Inject();
     }
-    cout << "    TrafficManager Step() inject complete" << endl;
     for(int subnet = 0; subnet < _subnets; ++subnet) {
        
         for(int n = 0; n < _nodes; ++n) {
@@ -1025,7 +1017,6 @@ void TrafficManager::_Step( )
             int const last_class = _last_class[n][subnet];
 
             int class_limit = _classes;
-            cout << "    TrafficManager Step() subnet" << subnet <<"/" <<_subnets-1 <<" node" << n << " lastclass" << last_class << endl;
             if(_hold_switch_for_packet) {
                 list<Flit *> const & pp = _partial_packets[n][last_class];
                 if(!pp.empty() && !pp.front()->head && 
@@ -1051,7 +1042,8 @@ void TrafficManager::_Step( )
                 Flit * const cf = pp.front();
                 assert(cf);
                 assert(cf->cl == c);
-	
+
+                //cout << "    TrafficManager Step() head:" << cf->head << " vc:" << cf->vc << " subnet:" << cf->subnetwork << " class:" << cf->cl << endl;
                 if(cf->subnetwork != subnet) {
                     continue;
                 }
@@ -1059,11 +1051,9 @@ void TrafficManager::_Step( )
                 if(f && (f->pri >= cf->pri)) {
                     continue;
                 }
-
                 if(cf->head && cf->vc == -1) { // Find first available VC
-	            cout << "    TrafficManager Step() Find first available VC" << endl; 
                     OutputSet route_set;
-                    _rf(NULL, cf, -1, &route_set, true);
+                    _rf(NULL, cf, -1, &route_set, true); //( const Router *r, const Flit *f, int in_channel,OutputSet *outputs, bool inject )
 		    set<OutputSet::sSetElement> const & os = route_set.GetSet();
                     assert(os.size() == 1);
                     OutputSet::sSetElement const & se = *os.begin();
@@ -1155,7 +1145,7 @@ void TrafficManager::_Step( )
                 }
             }
             if(f) {
-
+                //cout << "      trafficmanager subnet:" << f->subnetwork << endl; 
                 assert(f->subnetwork == subnet);
 
                 int const c = f->cl;
@@ -1188,9 +1178,7 @@ void TrafficManager::_Step( )
                     dest_buf->TakeBuffer(f->vc);
                     _last_vc[n][subnet][c] = f->vc;
                 }
-	
                 _last_class[n][subnet] = c;
-
                 _partial_packets[n][c].pop_front();
 
 #ifdef TRACK_FLOWS
@@ -1238,7 +1226,6 @@ void TrafficManager::_Step( )
             }
         }
     }
-
     for(int subnet = 0; subnet < _subnets; ++subnet) {
         for(int n = 0; n < _nodes; ++n) {
             map<int, Flit *>::const_iterator iter = flits[subnet].find(n);
@@ -1256,11 +1243,10 @@ void TrafficManager::_Step( )
                 Credit * const c = Credit::New();
                 c->vc.insert(f->vc);
                 _net[subnet]->WriteCredit(c, n);
-	
 #ifdef TRACK_FLOWS
                 ++_ejected_flits[f->cl][n];
 #endif
-	
+                cout << "    TrafficManager Step() Inject RetireFlit id:"<< f->pid << " f->src:" << f->src << " f->dest:" << f->dest << " dest:" << n << " VC:" << f->vc << endl;	
                 _RetireFlit(f, n);
             }
         }
