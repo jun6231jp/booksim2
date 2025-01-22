@@ -52,8 +52,8 @@
 #include "qtree.hpp"
 #include "cmesh.hpp"
 
-#define Hypercubeport 2
-#define Polarflyport 8
+#define Hypercubeport 1
+#define Polarflyport 3
 
 map<string, tRoutingFunction> gRoutingFunctionMap;
 
@@ -61,7 +61,7 @@ map<string, tRoutingFunction> gRoutingFunctionMap;
 
 int gNumVCs;
 
-
+/*
 int polarfly_connection_table[57][8]=
 {
 {8,9,10,11,12,13,14,0},
@@ -122,7 +122,7 @@ int polarfly_connection_table[57][8]=
 {15,43,49,24,34,38,52,14},
 {48,27,40,46,37,35,19,14}
 };
-
+*/
 /*
 int polarfly_connection_table[13][4]=
 {
@@ -141,7 +141,7 @@ int polarfly_connection_table[13][4]=
 {11,10,9,6}
 };
 */
-/*
+
 int polarfly_connection_table[7][3]=
 {
 {3,4,0},
@@ -152,7 +152,7 @@ int polarfly_connection_table[7][3]=
 {6,3,1},
 {5,3,2}
 };
-*/
+
 /* Add more functions here
  *
  */
@@ -2120,7 +2120,6 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
     else {
             //local move calculation
             local_port = hyperport_cal(cur, dest, in_port);
-            cout << "        routefunc polarfly+ id:" << f->pid << " hcubemv:" << (bitmask(cur,Hypercubeport) ^ bitmask(dest,Hypercubeport)) << endl; 
 	    //Global port calculation
             global_port = polarport_cal(src_grp, dest_grp); 
             cout << "        routefunc polarfly+ id:" << f->pid << " local_port:" << local_port << " global_port:" << global_port << endl;
@@ -2149,10 +2148,10 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
            }
            assert(out_port > -1);
     } 
-    cout << "        routefunc polarfly+ router:" << r->FullName() << "#" << r->GetID( ) << " id:" << f->pid << " src:" << f->src << " dest:" << f->dest << " in_port:" << in_channel << " in_vc:" << f->vc << " outport:" << out_port << " outvc:" << out_vc << endl;
-    //if ( f->type == Flit::READ_REQUEST ||  f->type == Flit::WRITE_REQUEST) {
-    //    out_vc+=3;
-    //} 
+    cout << "        routefunc polarfly+ router:" << r->FullName() << "#" << r->GetID( ) << " id:" << f->pid << " src:" << f->src << " dest:" << f->dest << " in_port:" << in_channel << " in_vc:" << f->vc << " outport:" << out_port << " outvc:" << out_vc << " flittype:" << f->type << endl;
+    if ( f->type == Flit::READ_REPLY ||  f->type == Flit::WRITE_REPLY) {
+    	if(in_port == 0) out_vc+=3;
+    } 
     outputs->AddRange( out_port, out_vc, out_vc );
    }
 }

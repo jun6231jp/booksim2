@@ -975,7 +975,6 @@ void TrafficManager::_Step( )
         for ( int n = 0; n < _nodes; ++n ) {
             Flit * const f = _net[subnet]->ReadFlit( n );
             if ( f ) {
-		//cout <<  " f->dest:"<< f->dest << " id:" << f->id << "-" << f->pid << endl;
                 if(f->watch) {
                     *gWatchOut << GetSimTime() << " | "
                                << "node" << n << " | "
@@ -985,8 +984,6 @@ void TrafficManager::_Step( )
                                << "." << endl;
                 }
 		cout << "   TrafficManager Step() eject flit id:" << f->pid << " n:" << n << " src:" << f->src << " dest:" << f->dest << endl;
-               // if(f->dest != n) f->dest=n ; // for dbg
-
 
 		flits[subnet].insert(make_pair(n, f));
                 if((_sim_state == warming_up) || (_sim_state == running)) {

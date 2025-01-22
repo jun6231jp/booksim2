@@ -24,7 +24,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//simple 8X8 torus under injection mode 
+//polarfly+ under injection mode 
 
 
 // Topology
@@ -33,8 +33,33 @@ k = 5;
 n = 1;
 // Routing
 routing_function = dim_order;
-// Flow control
+credit_delay   = 2;
+routing_delay  = 1;
+vc_alloc_delay = 1;
+sw_alloc_delay = 1;
+st_final_delay = 1;
+input_speedup     = 1;
+output_speedup    = 1;
+internal_speedup  = 1.0;
 num_vcs = 6;
+
 // Traffic
 traffic = uniform;
-injection_rate = 0.15;
+
+warmup_periods = 1;
+sim_count      = 1;
+sample_period  = 100;
+
+//1: batch mode, 0: injection mode
+use_read_write = 1;
+
+//for injection mode
+packet_size = 1;
+injection_rate = 0.2;
+
+//for batch mode
+read_request_size=1;
+write_request_size=100;
+read_reply_size=100;
+write_reply_size=1;
+
