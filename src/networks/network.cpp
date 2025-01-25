@@ -39,7 +39,7 @@
 #include "network.hpp"
 
 #include "kncube.hpp"
-#include "Hcube.hpp"
+#include "hcube.hpp"
 #include "Polarflyplus.hpp"
 #include "fly.hpp"
 #include "cmesh.hpp"
