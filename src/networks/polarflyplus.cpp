@@ -37,8 +37,8 @@
 #include "polarfly_tables.hpp"
 
 #define POLAR_LATENCY 
-#define Hypercubeport 1
-#define Polarflyport 3
+//#define Hypercubeport 1
+//#define Polarflyport 3
 #define Polarflysize POLARFLY_TABLE_ROWS
 
 int gP_polar, gA_polar, gG_polar;
@@ -128,6 +128,9 @@ void PolarFlyplusNew::_ComputeSize( const Configuration &config )
   // _p == # of processors within a router
   //_p = config.GetInt( "k" );// # of nodes in each switch=1
   //_n = config.GetInt( "n" );
+  int Hypercubeport = config.GetInt( "k" );
+  int Polarflyport = config.GetInt( "n" );
+
   _p=1;
   _n=1;
   assert(_n==1);
@@ -162,7 +165,8 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
   //int _dim_ID=-1;
   //int _num_ports_per_switch=Polarflyport+Hypercubeport+1;
   int c;
-
+  int Hypercubeport = config.GetInt( "k" );
+  int Polarflyport = config.GetInt( "n" );
   ostringstream router_name;
 
   cout << " Polarflyplus " << endl;
@@ -277,7 +281,35 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
 
 void PolarFlyplusNew::InsertRandomFaults( const Configuration &config )
 {
- 
+  int num_fails = config.GetInt( "link_failures" );
+  int Hypercubeport = config.GetInt( "k" );
+  int Polarflyport = config.GetInt( "n" );
+  if ( _size && num_fails ) {
+    vector<long> save_x;
+    vector<double> save_u;
+    SaveRandomState( save_x, save_u );
+    int fail_seed;
+    if ( config.GetStr( "fail_seed" ) == "time" ) {
+      fail_seed = int( time( NULL ) );
+      cout << "SEED: fail_seed=" << fail_seed << endl;
+    } else {
+      fail_seed = config.GetInt( "fail_seed" );
+    }
+    RandomSeed( fail_seed );
+
+    vector<bool> fail_nodes(_size);
+
+    for ( int i = 0; i < num_fails; ++i ) {
+      int node = RandomInt( _size - 1 );
+      int chan = RandomInt( _size * ( Hypercubeport + Polarflyport ) ) % ( Hypercubeport + Polarflyport );
+      OutChannelFault( node, chan );
+      cout << "failure at node " << node << ", channel "
+           << chan << endl;
+    }
+
+    RestoreRandomState( save_x, save_u );
+  }
+
 }
 
 double PolarFlyplusNew::Capacity( ) const

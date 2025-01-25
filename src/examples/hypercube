@@ -30,7 +30,7 @@
 // Topology
 topology = mesh;
 k = 2;
-n = 9;
+n = 2;
 // Routing
 routing_function = dim_order;
 // Flow control
@@ -38,4 +38,5 @@ num_vcs = 2;
 // Traffic
 traffic = uniform;
 injection_rate = 0.15;
-link_failures=0;
+link_failures=1;
+fail_seed=time;
