@@ -250,14 +250,14 @@ void PolarFlyplusNew::_BuildNet( const Configuration &config )
     int dest_polarport;
     for ( int cnt = 0; cnt < Polarflyport; ++cnt ) {
       for(int i = 0 ; i < 8; i++){
-          if (polarfly_table[polarfly_table[grp_ID][cnt]][i]==grp_ID){
+          if (polarfly_connection_table[polarfly_connection_table[grp_ID][cnt]][i]==grp_ID){
                 dest_polarport=i+Hypercubeport;
 		break;
 	  }
       }
       int hyperadd = node%(powi(2,Hypercubeport));
-      int dest_node_add = polarfly_table[grp_ID][cnt]*powi(2,Hypercubeport)+hyperadd;
-      //cout << hyperadd << " " << polarfly_table[grp_ID][cnt] << endl; 
+      int dest_node_add = polarfly_connection_table[grp_ID][cnt]*powi(2,Hypercubeport)+hyperadd;
+      //cout << hyperadd << " " << polarfly_connection_table[grp_ID][cnt] << endl; 
       _input = dest_node_add * (Polarflyport+Hypercubeport) + dest_polarport;
       //if(grp_ID < Polarflyport && cnt== Polarflyport-1) continue; //red group : no self-connection
        dbg[ch_count].push_back (to_string(_input)+" node"+to_string(dest_node_add)+"-port"+to_string(dest_polarport));

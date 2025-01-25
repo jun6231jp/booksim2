@@ -40,7 +40,7 @@
 
 #include "kncube.hpp"
 #include "hcube.hpp"
-#include "Polarflyplus.hpp"
+#include "polarflyplus.hpp"
 #include "fly.hpp"
 #include "cmesh.hpp"
 #include "flatfly_onchip.hpp"
