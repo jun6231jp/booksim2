@@ -299,17 +299,14 @@ void PolarFlyplusNew::InsertRandomFaults( const Configuration &config )
 
     vector<bool> fail_nodes(_size);
 
-    for ( int i = 0; i < num_fails; ++i ) {
+    for ( int i = 0; i < num_fails; i++ ) {
       int node = RandomInt( _size - 1 );
-      int chan = RandomInt( _size * ( Hypercubeport + Polarflyport ) ) % ( Hypercubeport + Polarflyport );
+      int chan = RandomInt( _size * ( Hypercubeport + Polarflyport ) ) % ( Hypercubeport + Polarflyport ) + 1;
       OutChannelFault( node, chan );
-      cout << "failure at node " << node << ", channel "
-           << chan << endl;
+      cout << "failure at node" << node << " port" << chan << endl;
     }
-
     RestoreRandomState( save_x, save_u );
   }
-
 }
 
 double PolarFlyplusNew::Capacity( ) const

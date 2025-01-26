@@ -1,9 +1,9 @@
 #ifndef _POLARFLY_TABLES_HPP_
 #define _POLARFLY_TABLES_HPP_
 
-#define USE_TABLE_7x3
+//#define USE_TABLE_7x3
 //#define USE_TABLE_13x4 
-//#define USE_TABLE_57x8
+#define USE_TABLE_57x8
 
 #ifdef USE_TABLE_7x3
 const int POLARFLY_TABLE_ROWS = 7;

@@ -29,8 +29,8 @@
 
 // Topology
 topology = polarflyplus;
-k = 1;
-n = 3;
+k = 7; //hypercube port
+n = 8; //polarfly port
 
 // Routing
 routing_function = dim_order;
@@ -51,15 +51,15 @@ vc_buf_size = 8;
 traffic = uniform;
 //latency: drains all packet, throughput:no drain?
 sim_type = throughput;
-warmup_periods = 3;
-sim_count      = 10;
-sample_period  = 10;
+warmup_periods = 1;
+sim_count      = 1;
+sample_period  = 30;
 
 //1: batch mode, 0: injection mode
 use_read_write = 0;
 
 //for injection mode
-packet_size = 3;
+packet_size = 1;
 injection_rate = 0.5;
 
 //for batch mode
@@ -68,5 +68,5 @@ write_request_size = 100;
 read_reply_size = 100;
 write_reply_size = 10;
 
-link_failures = 2;
+link_failures = 5;
 fail_seed=time;

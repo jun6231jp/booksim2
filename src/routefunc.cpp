@@ -1963,8 +1963,13 @@ int polarport_cal(int src_grp, int dest_grp){
     // 1hop
     for(int i=0; i < Polarflyport; i++){
         if(polarfly_connection_table[src_grp][i]==dest_grp){
-            global_port=i + 1; //eject port offset
-            break;
+	    if (src_grp == dest_grp){//red group self connection
+                global_port = (i + 1) % Polarflyport;
+	    }
+	    else {
+                global_port = i;
+            }
+	    break;
         }
     }
     // 2hop
@@ -1972,7 +1977,7 @@ int polarport_cal(int src_grp, int dest_grp){
        for(int i=0; i < Polarflyport; i++){
           for(int j=0; j < Polarflyport; j++){
               if(polarfly_connection_table[src_grp][i]==polarfly_connection_table[dest_grp][j]){
-                  global_port=i + 1; // eject port offset
+                  global_port = i;
                   break;
               }
           }
@@ -1980,7 +1985,7 @@ int polarport_cal(int src_grp, int dest_grp){
        }
     }
     assert(global_port>-1);
-    global_port += Hypercubeport; //local port offset
+    global_port += Hypercubeport + 1; //local port offset + eject port offset
     return global_port;
 }
 
@@ -1988,13 +1993,35 @@ int hyperport_cal(int src, int dest, int in_port){
 
      int hypercube_mv = bitmask(src,Hypercubeport) ^ bitmask(dest,Hypercubeport);
      int out_port = -1;
-
-     for(int i = in_port+1 ; i <= Hypercubeport; i++){
+     int hport=in_port;
+     if (hport > Hypercubeport) {hport=0;} 
+     for(int i = hport+1 ; i <= Hypercubeport; i++){
  	if(((hypercube_mv >> (i-1)) & 1) == 1){
 		out_port = i;
 		break;
 	}
      }
+     return out_port;
+}
+
+int polarfly_fault_escape(int src_grp, int in_port, int global_port){
+     int out_port=-1;
+     if (in_port > Hypercubeport) {//Global receive
+        for (int i = 0 ; i < Polarflyport; i++){
+           if(((i+Hypercubeport+1) != in_port) && ((i+Hypercubeport+1) != global_port)) out_port = i;
+	   break;
+	}
+     }
+     else{ //Local receive
+        out_port = (global_port-Hypercubeport-1)+1; //increment
+        if(out_port >= Polarflyport && src_grp < Polarflyport){
+	     out_port = out_port % (Polarflyport - 1);
+        } //red group 
+        if(out_port >= Polarflyport && src_grp >= Polarflyport){
+	     out_port = out_port % Polarflyport;
+        } //green, blue group
+     }
+     out_port += (Hypercubeport + 1); //Local offset + inject offset
      return out_port;
 }
 
@@ -2039,7 +2066,7 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
             local_port = hyperport_cal(cur, dest, in_port);
 	    //Global port calculation
             global_port = polarport_cal(src_grp, dest_grp); 
-            cout << "        routefunc polarfly+ id:" << f->pid << " local_port:" << local_port << " global_port:" << global_port << endl;
+            cout << "        routefunc polarfly+ id:" << f->pid <<" local_port"<< local_port <<" global_port"<< global_port << endl;
 
 	    //routing 
             out_port=-1;
@@ -2051,52 +2078,56 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 		    out_vc = in_vc;
 		  }	
 		  else{ // Hypercube fault escape
-		    cout << "        routefunc polarfly+ id:" << f->pid << " port" << local_port << " fault" << endl;
+		    cout << "        routefunc polarfly+ id:" << f->pid << " local_port" << local_port << " failure" << endl;
 		  }
 		}
            }
            if(in_port == Hypercubeport || out_port == -1) { //Local LSB receive or No local move : local -> global move
-                //if ( global_port > -1 ) {
-                  //if (!r->IsFaultyOutput( global_port )){ 
+                  if (!r->IsFaultyOutput( global_port )){ 
  		    cout << "        routefunc polarfly+ id:" << f->pid << " local->global move port" << global_port << endl;
 	            out_port = global_port; 
-	            out_vc = in_vc;
-		  //}
-                  /*else{ // Polarfly fault escape
-                    cout << "        routefunc polarfly+ id:" << f->pid << " port" << global_port << " fault" << endl;
-                    out_port = global_port+1;
-		    if(out_port > Hypercubeport+Polarflyport && src_grp < Polarflyport){ out_port = (out_port-1) % ( Hypercubeport + Polarflyport - 1) + 1;} //red group
-		    if(out_port > Hypercubeport+Polarflyport && src_grp >= Polarflyport){ out_port = (out_port-1) % (Hypercubeport + Polarflyport) + 1;} //green, blue group
-                    out_vc = in_vc;
-		  }*/
-		//}
+		  }
+                  else{ // Polarfly fault escape
+                    cout << "        routefunc polarfly+ id:" << f->pid << " port" << global_port << " failure" << endl;
+                    out_port = polarfly_fault_escape(src_grp,in_port,global_port);
+		  }
+		  out_vc = in_vc+1;
            }
-           if(in_port > Hypercubeport) { //Global receive: global -> local move + vc increment
-	        //if ( local_port > -1 ) {
-                //  if (!r->IsFaultyOutput( local_port )){ 
-                    cout << "        routefunc polarfly+ id:" << f->pid << " global->local move vc+1 port" << local_port << endl;
+           if(in_port > Hypercubeport) { 
+	        if ( local_port > -1 ) { //Global receive: global -> local move
+                  if (!r->IsFaultyOutput( local_port )){ 
+                    cout << "        routefunc polarfly+ id:" << f->pid << " global->local move port" << local_port << endl;
     	            out_port = local_port;
-         	    if (out_port > -1 ) out_vc = in_vc + 1; 
-		//  }
-		 // else{ // Hypercube fault escape
-                 //   cout << "        routefunc polarfly+ id:" << f->pid << " port" << local_port << " fault" << endl;
-                 // }
-	//	}
+         	    out_vc = in_vc; 
+		  }
+		  else{ // Hypercube fault escape
+                    cout << "        routefunc polarfly+ id:" << f->pid << " local_port" << local_port << " failure" << endl;
+                  }
+		}
+		else { //Global receive and No local move: global move + vc increment
+	            if (!r->IsFaultyOutput( global_port )){
+                       cout << "        routefunc polarfly+ id:" << f->pid << " global move vc+1 port" << global_port << endl;
+		       if (in_port!=global_port) {out_port = global_port;}
+		       else{out_port = polarfly_fault_escape(src_grp,in_port,global_port);cout << "polarescape id:" << f->pid <<endl;}
+		    }  
+		    else{ // Polarfly fault escape 
+			  cout << "        routefunc polarfly+ id:" << f->pid << " global_port" << global_port << " failure" << endl;
+			  out_port = polarfly_fault_escape(src_grp,in_port,global_port);
+                    }
+		    if (out_port > -1 ) out_vc = in_vc + 1;
+		}
            }
-           if(out_port == -1){ //Global receive and No local move: global move + vc increment
-                //if ( global_port > -1 ) {
-                 // if (!r->IsFaultyOutput( global_port )){
+           if(out_port == -1){ //Global receive and Hypercube escape: global move + vc increment
+                  if (!r->IsFaultyOutput( global_port )){
 		    cout << "        routefunc polarfly+ id:" << f->pid << " global move vc+1 port" << global_port << endl;
-              	    out_port = global_port;
-                    if (out_port > -1 ) out_vc = in_vc + 1;
-		  //}
-		  /*else{ // Polarfly fault escape
-	            cout << "        routefunc polarfly+ id:" << f->pid << " port" << global_port << " fault" << endl;                                   out_port = global_port+1; 
-		    if(out_port > Hypercubeport+Polarflyport && src_grp < Polarflyport){  out_port = (out_port-1) % ( Hypercubeport + Polarflyport - 1) + 1;} //red group
-                    if(out_port > Hypercubeport+Polarflyport && src_grp >= Polarflyport){  out_port = (out_port-1) % (Hypercubeport + Polarflyport) + 1;} //green, blue group
-                    if (out_port > -1 ) out_vc = in_vc + 1;
-                  }*/
-                //}
+              	    if (in_port!=global_port) {out_port = global_port;}
+                    else{out_port = polarfly_fault_escape(src_grp,in_port,global_port);}
+		  }
+		  else{ // Polarfly fault escape
+	            cout << "        routefunc polarfly+ id:" << f->pid << " global_port" << global_port << " failure" << endl;
+		    out_port = polarfly_fault_escape(src_grp,in_port,global_port); 
+                  }
+		  if (out_port > -1 ) out_vc = in_vc + 1;
            }
            assert(out_port > -1);
     } 
