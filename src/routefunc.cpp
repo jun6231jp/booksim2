@@ -2108,7 +2108,7 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 	            if (!r->IsFaultyOutput( global_port )){
                        cout << "        routefunc polarfly+ id:" << f->pid << " global move vc+1 port" << global_port << endl;
 		       if (in_port!=global_port) {out_port = global_port;}
-		       else{out_port = polarfly_fault_escape(src_grp,in_port,global_port);cout << "polarescape id:" << f->pid <<endl;}
+		       else{out_port = polarfly_fault_escape(src_grp,in_port,global_port);}
 		    }  
 		    else{ // Polarfly fault escape 
 			  cout << "        routefunc polarfly+ id:" << f->pid << " global_port" << global_port << " failure" << endl;
