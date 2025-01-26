@@ -29,8 +29,8 @@
 
 // Topology
 topology = polarflyplus;
-k = 7; //hypercube port
-n = 8; //polarfly port
+k = 3; //hypercube port
+n = 8; //polarfly port F7:8, F5:6, F3:4, F2:3
 
 // Routing
 routing_function = dim_order;

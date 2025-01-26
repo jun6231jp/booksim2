@@ -37,8 +37,6 @@
 #include "polarfly_tables.hpp"
 
 #define POLAR_LATENCY 
-//#define Hypercubeport 1
-//#define Polarflyport 3
 #define Polarflysize POLARFLY_TABLE_ROWS
 
 int gP_polar, gA_polar, gG_polar;
@@ -46,8 +44,6 @@ int gP_polar, gA_polar, gG_polar;
 //Hypercube : Local (group)
 //Polarfly  : Global
 vector<vector<string>> dbg;
-// node0-p0, node1-p0, hypercube
-
 
 //calculate the hop count between src and destination
 int polarflyplusnew_hopcnt(int src, int dest) 
