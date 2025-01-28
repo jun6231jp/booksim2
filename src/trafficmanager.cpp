@@ -788,6 +788,7 @@ int TrafficManager::_IssuePacket( int source, int cl )
     return result;
 }
 
+
 void TrafficManager::_GeneratePacket( int source, int stype, 
                                       int cl, int time )
 {
@@ -870,8 +871,8 @@ void TrafficManager::_GeneratePacket( int source, int stype,
         f->ctime  = time;
         f->record = record;
         f->cl     = cl;
-
-        _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
+	f->data = (int*)malloc(sizeof(int)*5);//for source routing
+	_total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
         if(record) {
             _measured_in_flight_flits[f->cl].insert(make_pair(f->id, f));
         }

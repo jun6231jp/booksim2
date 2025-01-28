@@ -6,6 +6,9 @@
 //#define USE_TABLE_31x6
 //#define USE_TABLE_57x8
 
+void initializeFaultTable();
+void updateFaultTable(int row, int col, bool value);
+
 #ifdef USE_TABLE_7x3
 const int POLARFLY_TABLE_ROWS = 7;
 const int POLARFLY_TABLE_COLS = 3;
@@ -18,6 +21,10 @@ const int polarfly_connection_table[7][3] = {
     {6,3,1},
     {5,3,2}
 };
+const int total_node = 1792;
+const int node_port = 12;
+extern bool fault_table[1792][12];
+
 
 #elif defined(USE_TABLE_13x4)
 const int POLARFLY_TABLE_ROWS = 13;
@@ -37,6 +44,9 @@ const int polarfly_connection_table[13][4] = {
     {12,10,8,5},
     {11,10,9,6}
 };
+const int total_node = 3328;
+const int node_port = 13;
+extern bool fault_table[3328][13];
 
 #elif defined(USE_TABLE_31x6)
 const int POLARFLY_TABLE_ROWS = 31;
@@ -74,6 +84,9 @@ const int polarfly_connection_table[31][6] = {
     {20,24,30,14,10,26},
     {21,27,29,12,17,10}
 };
+const int total_node = 7936;
+const int node_port = 15;
+extern bool fault_table[7936][15];
 
 #elif defined(USE_TABLE_57x8)
 const int POLARFLY_TABLE_ROWS = 57;
@@ -137,10 +150,14 @@ const int polarfly_connection_table[57][8] = {
     {15,43,49,24,34,38,52,14},
     {48,27,40,46,37,35,19,14}
 };
+const int total_node = 14592;
+const int node_port = 17;
+extern bool fault_table[14592][17];
 
-   
 #else
 #error "No table size selected! Uncomment one of the USE_TABLE_* defines"
+
 #endif
+
 
 #endif // _POLARFLY_TABLES_HPP_
