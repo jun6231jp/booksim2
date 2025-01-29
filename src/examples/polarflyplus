@@ -68,5 +68,5 @@ write_request_size = 1;
 read_reply_size = 1;
 write_reply_size = 1;
 
-link_failures = 5;
+link_failures = 3;
 //fail_seed=time;

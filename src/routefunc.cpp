@@ -2022,6 +2022,21 @@ int polarfly_fault_escape(int src_grp, int in_port, int global_port){
      return out_port;
 }
 
+tuple<int,int,int,bool> local_mv(int s, int d, int bit, int local_port){
+  int hypercube_mv = bitmask(s,Hypercubeport) ^ bitmask(d,Hypercubeport);
+  bool local_achieve = false;
+  if (local_port <= bit && !fault_table[s][local_port]){
+     s^= (1<<(local_port-1));
+     if( bitmask(s,Hypercubeport) == bitmask(d,Hypercubeport) ){
+        local_achieve=true;
+    }
+    return {s,local_port,bitmask(hypercube_mv,bit),local_achieve}; 
+  }
+  else{
+    return {-1,-1,-1,false};
+  }
+}
+
 void source_routing(const Flit *f, int cur, int dest){
 
    int local_mv1=0,local_mv2=0,local_mv3=0;
@@ -2039,12 +2054,17 @@ void source_routing(const Flit *f, int cur, int dest){
            bool local_achieve=false;
            bool global_achieve=false;
       for (int j = Hypercubeport ; j >= i; j-- ){
-   	   int s = cur;
+           local_mv1=0;
+           local_mv2=0;
+           local_mv3=0;
+           global_port1=0;
+	   global_port2=0;
+  	   int s = cur;
            const int d = dest;
 	   int s_grp = s>>Hypercubeport;
            const int d_grp = d>>Hypercubeport;
 	   int mask1=i, mask2=j-i, mask3=Hypercubeport-j; 
-	   //cout << "source routing " << mask1 << " " << mask2 << " " << mask3 << endl;
+	   cout << "source routing " << mask1 << " " << mask2 << " " << mask3 << endl;
 	   local_achieve=false;
 	   global_achieve=false;
            if( bitmask(s,Hypercubeport) == bitmask(d,Hypercubeport) ){
@@ -2053,7 +2073,7 @@ void source_routing(const Flit *f, int cur, int dest){
            if(s_grp==d_grp){
                     global_achieve=true;
            }
-	  
+	   
            int local_port=0, local_port_tmp=0;
 	   int global_port=0;
 	   //local mv 1
@@ -2067,12 +2087,12 @@ void source_routing(const Flit *f, int cur, int dest){
 		       local_achieve=true;
 		       break;
 		    }
-		 }
-		 else{break;}
+		  }
+		  else{break;}
 	      }
+	      local_mv1 = bitmask(hypercube_mv,i);
 	   }
 	   if (local_achieve && global_achieve){
-		   local_mv1 = bitmask(hypercube_mv,i);
 		   break;
 	   }
            //global mv 1
@@ -2084,14 +2104,13 @@ void source_routing(const Flit *f, int cur, int dest){
 		 if(s_grp==d_grp){
                     global_achieve=true;
                  }
+		 global_port1=global_port;
 	      }
 	      else {
 		   continue;
 	      }
 	   }
            if (local_achieve && global_achieve){
-                   local_mv1 = bitmask(hypercube_mv,i);
-		   global_port1=global_port;
 		   break;
            }           
 	   //local mv 2
@@ -2108,15 +2127,12 @@ void source_routing(const Flit *f, int cur, int dest){
                  }
                  else{break;}
               }
+	      local_mv2 = bitmask(hypercube_mv>>i,j)<<i;
 	   }
 	   if (local_achieve && global_achieve){
-                   local_mv1 = bitmask(hypercube_mv,i);
-		   local_mv2 = bitmask(hypercube_mv>>i,j)<<i;
-                   global_port1=global_port;
 		   break;
            }
 	   //global mv 2
-	   global_port1=global_port;
            if(!global_achieve){ 
               global_port = polarport_cal(s_grp, d_grp);
               if (!fault_table[s_grp*(1<<Hypercubeport)+s][global_port]){
@@ -2125,15 +2141,13 @@ void source_routing(const Flit *f, int cur, int dest){
                  if(s_grp==d_grp){
                     global_achieve=true;
                  }
+		 global_port2=global_port;
               }
               else {
                    continue;
               }
            }
            if (local_achieve && global_achieve){
-                   local_mv1 = bitmask(hypercube_mv,i);
-		   local_mv2 = bitmask(hypercube_mv>>i,j)<<i;
-		   global_port2=global_port;
                    break;
            }
 	   //local mv 3
@@ -2150,12 +2164,9 @@ void source_routing(const Flit *f, int cur, int dest){
                  }
                  else{break;}
               }
+	      local_mv3 = (hypercube_mv>>j)<<j;
            }
            if (local_achieve && global_achieve){
-                   local_mv1 = bitmask(hypercube_mv,i);
-                   local_mv2 = bitmask(hypercube_mv>>i,j)<<i;
-		   local_mv3 = (hypercube_mv>>j)<<j;
-                   global_port2=global_port;
                    break;
            }
       }
@@ -2236,16 +2247,16 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 		}
 	      }
 	    } 
-            if(in_port == Hypercubeport || out_port == -1) { //Local LSB receive or No local move : local -> global move 
+            if(in_port == Hypercubeport || (in_port <= Hypercubeport && out_port == -1)) { //Local LSB receive or No local move : local -> global move 
                if (in_vc == 0 || in_vc == 3){
                  out_port = global_port1;
 	         out_vc = in_vc;
-                 cout << "routefunc polarfly+ id:" << f->pid << " gloval move1 port" << out_port << " vc" << out_vc << endl;
+                 cout << "routefunc polarfly+ id:" << f->pid << " global move1 port" << out_port << " vc" << out_vc << endl;
 	       }
 	       else if (in_vc == 1 || in_vc == 4){
                  out_port = global_port2;
                  out_vc = in_vc;
-                 cout << "routefunc polarfly+ id:" << f->pid << " gloval move2 port" << out_port << " vc" << out_vc << endl;
+                 cout << "routefunc polarfly+ id:" << f->pid << " global move2 port" << out_port << " vc" << out_vc << endl;
 	       }
    	    }
             if(in_port > Hypercubeport) {  //Global receive: global -> local move 
@@ -2267,10 +2278,10 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
                       }
 		 }
               }
-	      if (local_mv2==0){ //Global receive: global -> global
+	      if (out_port==-1){ //Global receive no hypercube mv: global -> global
                  out_port = global_port2;
                  out_vc = in_vc+1;
-                 cout << "routefunc polarfly+ id:" << f->pid << " gloval move2 port" << out_port << " vc" << out_vc << endl;
+                 cout << "routefunc polarfly+ id:" << f->pid << " global move2 port" << out_port << " vc" << out_vc << endl;
 	      }
 	    }
 
