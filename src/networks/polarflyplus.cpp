@@ -306,6 +306,13 @@ void PolarFlyplusNew::InsertRandomFaults( const Configuration &config )
     }
     RestoreRandomState( save_x, save_u );
   }
+  for(int i = 0 ; i < 7*(1<<Hypercubeport); i++){
+      cout << "fault table: node" << i << " " ;
+      for(int j = 0 ; j < Polarflyport+Hypercubeport+1 ; j++){
+        if(!fault_table[i][j]){cout << "O";}
+        else {cout << "X";}
+      }cout << endl;
+   }
 }
 
 double PolarFlyplusNew::Capacity( ) const
