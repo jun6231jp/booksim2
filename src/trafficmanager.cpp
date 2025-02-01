@@ -40,6 +40,7 @@
 #include "vc.hpp"
 #include "packet_reply_info.hpp"
 
+
 TrafficManager * TrafficManager::New(Configuration const & config,
                                      vector<Network *> const & net)
 {
@@ -787,6 +788,7 @@ int TrafficManager::_IssuePacket( int source, int cl )
     return result;
 }
 
+
 void TrafficManager::_GeneratePacket( int source, int stype, 
                                       int cl, int time )
 {
@@ -797,7 +799,7 @@ void TrafficManager::_GeneratePacket( int source, int stype,
     assert(_cur_pid);
     int packet_destination = _traffic_pattern[cl]->dest(source);
 
-    cout << "    TrafficManager GeneratePacket id:" << pid << " source:" << source << " type:" << stype << " class:" << cl << " time:" << time << " dest:" << packet_destination << endl;
+    cout << "TrafficManager GeneratePacket id:" << pid << " source:" << source << " type:" << stype << " class:" << cl << " time:" << time << " dest:" << packet_destination << endl;
     bool record = false;
     bool watch = gWatchOut && (_packets_to_watch.count(pid) > 0);
     if(_use_read_write[cl]){
@@ -869,8 +871,8 @@ void TrafficManager::_GeneratePacket( int source, int stype,
         f->ctime  = time;
         f->record = record;
         f->cl     = cl;
-
-        _total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
+	f->data = (int*)malloc(sizeof(int)*5);//for source routing
+	_total_in_flight_flits[f->cl].insert(make_pair(f->id, f));
         if(record) {
             _measured_in_flight_flits[f->cl].insert(make_pair(f->id, f));
         }
@@ -970,7 +972,7 @@ void TrafficManager::_Step( )
     }
 
     vector<map<int, Flit *> > flits(_subnets);
-    cout << "   TrafficManager Step() sim state " << _sim_state << endl;
+    cout << "TrafficManager Step() sim state " << _sim_state << endl;
    for ( int subnet = 0; subnet < _subnets; ++subnet ) {
         for ( int n = 0; n < _nodes; ++n ) {
             Flit * const f = _net[subnet]->ReadFlit( n );
@@ -983,7 +985,6 @@ void TrafficManager::_Step( )
                                << " from VC " << f->vc
                                << "." << endl;
                 }
-		cout << "   TrafficManager Step() eject flit id:" << f->pid << " n:" << n << " src:" << f->src << " dest:" << f->dest << endl;
 
 		flits[subnet].insert(make_pair(n, f));
                 if((_sim_state == warming_up) || (_sim_state == running)) {
@@ -1051,7 +1052,6 @@ void TrafficManager::_Step( )
                 assert(cf);
                 assert(cf->cl == c);
 
-                //cout << "    TrafficManager Step() head:" << cf->head << " vc:" << cf->vc << " subnet:" << cf->subnetwork << " class:" << cf->cl << endl;
                 if(cf->subnetwork != subnet) {
                     continue;
                 }
@@ -1153,7 +1153,6 @@ void TrafficManager::_Step( )
                 }
             }
             if(f) {
-                //cout << "      trafficmanager subnet:" << f->subnetwork << endl; 
                 assert(f->subnetwork == subnet);
 
                 int const c = f->cl;
@@ -1253,7 +1252,7 @@ void TrafficManager::_Step( )
 #ifdef TRACK_FLOWS
                 ++_ejected_flits[f->cl][n];
 #endif
-                cout << "    TrafficManager Step() Inject RetireFlit id:"<< f->pid << " f->src:" << f->src << " f->dest:" << f->dest << " dest:" << n << " VC:" << f->vc << endl;	
+                cout << "TrafficManager Step() Inject RetireFlit id:"<< f->pid << " f->src:" << f->src << " f->dest:" << f->dest << " dest:" << n << " VC:" << f->vc << endl;	
                 _RetireFlit(f, n);
             }
         }
@@ -1431,7 +1430,7 @@ bool TrafficManager::_SingleSim( )
     
         for ( int iter = 0; iter < _sample_period; ++iter )
 	{
-	       cout << "  TrafficManager SingleSim() step" << iter << endl;	
+	       cout << "TrafficManager SingleSim() step" << iter << endl;	
 		_Step( );
 	}
     
@@ -1685,7 +1684,6 @@ bool TrafficManager::Run( )
         }
         _UpdateOverallStats();
     }
-  
     DisplayOverallStats();
     if(_print_csv_results) {
         DisplayOverallStatsCSV();

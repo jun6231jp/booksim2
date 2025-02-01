@@ -40,6 +40,8 @@
 #define Polarflysize POLARFLY_TABLE_ROWS
 
 int gP_polar, gA_polar, gG_polar;
+bool fault_table[total_node][node_port] = {false};
+
 
 //Hypercube : Local (group)
 //Polarfly  : Global
@@ -299,10 +301,18 @@ void PolarFlyplusNew::InsertRandomFaults( const Configuration &config )
       int node = RandomInt( _size - 1 );
       int chan = RandomInt( _size * ( Hypercubeport + Polarflyport ) ) % ( Hypercubeport + Polarflyport ) + 1;
       OutChannelFault( node, chan );
+      fault_table[node][chan]=true;
       cout << "failure at node" << node << " port" << chan << endl;
     }
     RestoreRandomState( save_x, save_u );
   }
+  for(int i = 0 ; i < 7*(1<<Hypercubeport); i++){
+      cout << "fault table: node" << i << " " ;
+      for(int j = 0 ; j < Polarflyport+Hypercubeport+1 ; j++){
+        if(!fault_table[i][j]){cout << "O";}
+        else {cout << "X";}
+      }cout << endl;
+   }
 }
 
 double PolarFlyplusNew::Capacity( ) const
