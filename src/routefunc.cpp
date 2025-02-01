@@ -2022,20 +2022,6 @@ int polarfly_fault_escape(int src_grp, int in_port, int global_port){
      return out_port;
 }
 */
-tuple<int,int,int,bool> local_mv(int s, int d, int bit, int local_port){
-  int hypercube_mv = bitmask(s,Hypercubeport) ^ bitmask(d,Hypercubeport);
-  bool local_achieve = false;
-  if (local_port <= bit && !fault_table[s][local_port]){
-     s^= (1<<(local_port-1));
-     if( bitmask(s,Hypercubeport) == bitmask(d,Hypercubeport) ){
-        local_achieve=true;
-    }
-    return {s,local_port,bitmask(hypercube_mv,bit),local_achieve}; 
-  }
-  else{
-    return {-1,-1,-1,false};
-  }
-}
 
 // ソースルーティングの実装
 // フリットに対してルーティング情報を計算し、データフィールドに格納する
@@ -2058,8 +2044,9 @@ LocalMoveResult process_local_move(int current, int dest, int start_port, int ma
         int local_port_temp = hyperport_cal(current, dest, local_port);
         if (local_port_temp <= max_port && !fault_table[current][local_port_temp]) {
             local_port = local_port_temp;
+	    cout << "source routing node" << current << " -> ";
             current ^= (1 << (local_port - 1));
-            
+            cout << "node" << current << endl;
             if (bitmask(current, Hypercubeport) == bitmask(dest, Hypercubeport)) {
                 result.routing_complete = true;
                 break;
@@ -2100,9 +2087,11 @@ GlobalMoveResult process_global_move(int current, int current_group, int dest_gr
     GlobalMoveResult result = {current, current_group, 0, false};
     
     int global_port = polarport_cal(current_group, dest_group);
-    if (!fault_table[current_group * (1 << Hypercubeport) + current][global_port]) {
+    if (!fault_table[current][global_port]) {
+	cout << "source routing grp" << current_group << " -> ";
         current_group = polarfly_connection_table[current_group][global_port - Hypercubeport - 1];
-        current = current_group * (1 << Hypercubeport) + current;
+        cout << "grp" << current_group << endl;
+	current = current_group * (1 << Hypercubeport) + bitmask(current, Hypercubeport);
         
         if (current_group == dest_group) {
             result.routing_complete = true;
@@ -2111,7 +2100,7 @@ GlobalMoveResult process_global_move(int current, int current_group, int dest_gr
     }
     else {
         cout << "source routing global" << phase << " node" 
-             << (current_group * (1 << Hypercubeport) + current)
+             << current
              << " port" << global_port << " err" << endl;
     }
     
@@ -2127,7 +2116,7 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
     
     int hypercube_moves = bitmask(current_node, Hypercubeport) ^ bitmask(destination_node, Hypercubeport);
 
-    for (int i = 0; i < gN; ++i) {
+    for (int i = Hypercubeport; i >= 0; i--) {
         bool local_routing_complete = false;
         bool global_routing_complete = false;
 
