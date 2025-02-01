@@ -2044,9 +2044,10 @@ LocalMoveResult process_local_move(int current, int dest, int start_port, int ma
         int local_port_temp = hyperport_cal(current, dest, local_port);
         if (local_port_temp <= max_port && !fault_table[current][local_port_temp]) {
             local_port = local_port_temp;
-	    cout << "source routing node" << current << " -> ";
+            cout << "source routing node" << current << " -> ";
             current ^= (1 << (local_port - 1));
             cout << "node" << current << endl;
+            
             if (bitmask(current, Hypercubeport) == bitmask(dest, Hypercubeport)) {
                 result.routing_complete = true;
                 break;
@@ -2088,10 +2089,11 @@ GlobalMoveResult process_global_move(int current, int current_group, int dest_gr
     
     int global_port = polarport_cal(current_group, dest_group);
     if (!fault_table[current][global_port]) {
-	cout << "source routing grp" << current_group << " -> ";
-        current_group = polarfly_connection_table[current_group][global_port - Hypercubeport - 1];
-        cout << "grp" << current_group << endl;
-	current = current_group * (1 << Hypercubeport) + bitmask(current, Hypercubeport);
+          cout << "source routing grp" << current_group << " -> ";
+          current_group = polarfly_connection_table[current_group][global_port - Hypercubeport - 1];
+          current = current_group * (1 << Hypercubeport) + current;
+          cout << "grp" << current_group << endl;
+          current = current_group * (1 << Hypercubeport) + bitmask(current, Hypercubeport);
         
         if (current_group == dest_group) {
             result.routing_complete = true;
@@ -2109,13 +2111,20 @@ GlobalMoveResult process_global_move(int current, int current_group, int dest_gr
     return result;
 }
 
-void source_routing(const Flit *f, int current_node, int destination_node) {
-    int local_move1 = 0, local_move2 = 0, local_move3 = 0;
-    int global_port1 = 0, global_port2 = 0;
-    int routing_result = 0;
-    
-    int hypercube_moves = bitmask(current_node, Hypercubeport) ^ bitmask(destination_node, Hypercubeport);
+// 移動パターンの試行結果を格納する構造体
+struct RoutingAttemptResult {
+    int local_move1;
+    int local_move2;
+    int local_move3;
+    int global_port1;
+    int global_port2;
+    bool success;
+};
 
+// 指定された軸順序でルーティングを試みる関数
+RoutingAttemptResult try_routing_pattern(int current_node, int destination_node, bool reverse_order) {
+    RoutingAttemptResult result = {0, 0, 0, 0, 0, false};
+    
     for (int i = Hypercubeport; i >= 0; i--) {
         bool local_routing_complete = false;
         bool global_routing_complete = false;
@@ -2126,11 +2135,20 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
             int current_group = current >> Hypercubeport;
             const int dest_group = dest >> Hypercubeport;
 
-            int hop1_size = i;
-            int hop2_size = j - i;
-            int hop3_size = Hypercubeport - j;
+            // reverse_orderに応じてホップサイズを調整
+            int hop1_size, hop2_size, hop3_size;
+            if (!reverse_order) {
+                hop1_size = i;
+                hop2_size = j - i;
+                hop3_size = Hypercubeport - j;
+            } else {
+                hop3_size = i;
+                hop2_size = j - i;
+                hop1_size = Hypercubeport - j;
+            }
 
-            cout << "source routing hypercube hops:" << hop1_size << " " << hop2_size << " " << hop3_size << endl;
+            cout << "source routing hypercube hops:" << hop1_size << " " << hop2_size << " " << hop3_size 
+                 << (reverse_order ? " (reverse order)" : "") << endl;
 
             // 初期状態でのルーティング完了チェック
             local_routing_complete = (bitmask(current, Hypercubeport) == bitmask(dest, Hypercubeport));
@@ -2138,81 +2156,131 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
 
             // 第1ローカル移動
             if (!local_routing_complete) {
-                auto result = process_local_move(current, dest, 0, i, hop1_size, 0);
-                if (result.fault_detected) continue;
-                current = result.current;
-                local_move1 = result.local_move;
-                local_routing_complete = result.routing_complete;
+                auto move_result = process_local_move(current, dest, 0, 
+                    reverse_order ? Hypercubeport : i, 
+                    hop1_size, 
+                    reverse_order ? j : 0);
+                if (move_result.fault_detected) continue;
+                current = move_result.current;
+                result.local_move1 = move_result.local_move;
+                local_routing_complete = move_result.routing_complete;
             }
-            if (local_routing_complete && global_routing_complete) break;
+            if (local_routing_complete && global_routing_complete) {
+                result.success = true;
+                return result;
+            }
 
             // 第1グローバル移動
             if (!global_routing_complete) {
-                auto result = process_global_move(current, current_group, dest_group, 1);
-                if (result.global_port == 0) continue;
-                current = result.current;
-                current_group = result.current_group;
-                global_port1 = result.global_port;
-                global_routing_complete = result.routing_complete;
+                auto move_result = process_global_move(current, current_group, dest_group, 1);
+                if (move_result.global_port == 0) continue;
+                current = move_result.current;
+                current_group = move_result.current_group;
+                result.global_port1 = move_result.global_port;
+                global_routing_complete = move_result.routing_complete;
             }
-            if (local_routing_complete && global_routing_complete) break;
+            if (local_routing_complete && global_routing_complete) {
+                result.success = true;
+                return result;
+            }
 
             // 第2ローカル移動
             if (!local_routing_complete) {
-                auto result = process_local_move(current, dest, 0, j, hop2_size, i);
-                if (result.fault_detected) continue;
-                current = result.current;
-                local_move2 = result.local_move;
-                local_routing_complete = result.routing_complete;
+                auto move_result = process_local_move(current, dest, 0, j, hop2_size, 
+                    reverse_order ? hop3_size : i);
+                if (move_result.fault_detected) continue;
+                current = move_result.current;
+                result.local_move2 = move_result.local_move;
+                local_routing_complete = move_result.routing_complete;
             }
-            if (local_routing_complete && global_routing_complete) break;
+            if (local_routing_complete && global_routing_complete) {
+                result.success = true;
+                return result;
+            }
 
             // 第2グローバル移動
             if (!global_routing_complete) {
-                auto result = process_global_move(current, current_group, dest_group, 2);
-                if (result.global_port == 0) continue;
-                current = result.current;
-                current_group = result.current_group;
-                global_port2 = result.global_port;
-                global_routing_complete = result.routing_complete;
+                auto move_result = process_global_move(current, current_group, dest_group, 2);
+                if (move_result.global_port == 0) continue;
+                current = move_result.current;
+                current_group = move_result.current_group;
+                result.global_port2 = move_result.global_port;
+                global_routing_complete = move_result.routing_complete;
             }
-            if (local_routing_complete && global_routing_complete) break;
+            if (local_routing_complete && global_routing_complete) {
+                result.success = true;
+                return result;
+            }
 
             // 第3ローカル移動
             if (!local_routing_complete) {
-                auto result = process_local_move(current, dest, 0, Hypercubeport, hop3_size, j);
-                if (result.fault_detected) continue;
-                current = result.current;
-                local_move3 = result.local_move;
-                local_routing_complete = result.routing_complete;
+                auto move_result = process_local_move(current, dest, 0, 
+                    reverse_order ? i : Hypercubeport, 
+                    hop3_size, 
+                    reverse_order ? 0 : j);
+                if (move_result.fault_detected) continue;
+                current = move_result.current;
+                result.local_move3 = move_result.local_move;
+                local_routing_complete = move_result.routing_complete;
             }
-            if (local_routing_complete && global_routing_complete) break;
-        }
-        
-        if (local_routing_complete && global_routing_complete) break;
-        
-        if (i == 0 && !(local_routing_complete && global_routing_complete)) {
-            routing_result = 1;
+            if (local_routing_complete && global_routing_complete) {
+                result.success = true;
+                return result;
+            }
         }
     }
+    
+    return result;
+}
 
-    // ルーティング情報をフリットのデータフィールドに格納
-    ((int*)f->data)[0] = local_move1;
-    ((int*)f->data)[1] = local_move2;
-    ((int*)f->data)[2] = local_move3;
-    ((int*)f->data)[3] = global_port1;
-    ((int*)f->data)[4] = global_port2;
+void source_routing(const Flit *f, int current_node, int destination_node) {
+    int routing_result = 0;
+    int hypercube_moves = bitmask(current_node, Hypercubeport) ^ bitmask(destination_node, Hypercubeport);
+
+    // まずx -> y -> z軸の順で試行
+    auto forward_result = try_routing_pattern(current_node, destination_node, false);
+    
+    // 成功した場合はその結果を使用
+    if (forward_result.success) {
+        ((int*)f->data)[0] = forward_result.local_move1;
+        ((int*)f->data)[1] = forward_result.local_move2;
+        ((int*)f->data)[2] = forward_result.local_move3;
+        ((int*)f->data)[3] = forward_result.global_port1;
+        ((int*)f->data)[4] = forward_result.global_port2;
+    } else {
+        // 失敗した場合はz -> y -> x軸の順で試行
+        cout << "reverse routing start" << endl;
+        auto reverse_result = try_routing_pattern(current_node, destination_node, true);
+        
+        if (reverse_result.success) {
+            ((int*)f->data)[0] = reverse_result.local_move1;
+            ((int*)f->data)[1] = reverse_result.local_move2;
+            ((int*)f->data)[2] = reverse_result.local_move3;
+            ((int*)f->data)[3] = reverse_result.global_port1;
+            ((int*)f->data)[4] = reverse_result.global_port2;
+        } else {
+            // 両方の試行が失敗した場合
+            routing_result = 1;
+            // 最後に試行した結果を使用
+            ((int*)f->data)[0] = reverse_result.local_move1;
+            ((int*)f->data)[1] = reverse_result.local_move2;
+            ((int*)f->data)[2] = reverse_result.local_move3;
+            ((int*)f->data)[3] = reverse_result.global_port1;
+            ((int*)f->data)[4] = reverse_result.global_port2;
+        }
+    }
 
     cout << "source routing id:" << f->id 
          << " src:" << current_node 
          << " dest:" << destination_node 
          << " mv:" << hypercube_moves 
-         << " localmv1:" << local_move1 
-         << " localmv2:" << local_move2 
-         << " localmv3:" << local_move3 
-         << " global1:" << global_port1 
-         << " global2:" << global_port2 
-         << " routing:" << routing_result << endl;
+         << " localmv1:" << ((int*)f->data)[0]
+         << " localmv2:" << ((int*)f->data)[1]
+         << " localmv3:" << ((int*)f->data)[2]
+         << " global1:" << ((int*)f->data)[3]
+         << " global2:" << ((int*)f->data)[4]
+         << " routing:" << routing_result 
+         << (routing_result == 1 ? " (using alternative path)" : "") << endl;
 }
 
 
