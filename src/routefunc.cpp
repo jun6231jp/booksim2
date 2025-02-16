@@ -36,6 +36,7 @@
  *
  */
 #include <bitset>
+#include <algorithm>
 #include <map>
 #include <cstdlib>
 #include <cassert>
@@ -2211,11 +2212,16 @@ void source_routing(const Flit *f, int current_node, int destination_node, int i
 	    }
         }
     }
-    ((int*)f->data)[0] = local_move1;
-    ((int*)f->data)[1] = local_move2;
-    ((int*)f->data)[2] = local_move3;
-    ((int*)f->data)[3] = global_port1;
-    ((int*)f->data)[4] = global_port2;
+
+    sort(oklist.begin(), oklist.end(), [](const vector<int>& a, const vector<int>& b) {
+        return a[5] < b[5];
+    });
+    
+    ((int*)f->data)[0] = oklist[0][0];//local_move1;
+    ((int*)f->data)[1] = oklist[0][1];//local_move2;
+    ((int*)f->data)[2] = oklist[0][2];//local_move3;
+    ((int*)f->data)[3] = oklist[0][3];//global_port1;
+    ((int*)f->data)[4] = oklist[0][4];//global_port2;
     if(oklist.size()==0){routing_result=1;}
     cout << "source routing id:" << f->id 
          << " src:" << current_node 
@@ -2226,7 +2232,8 @@ void source_routing(const Flit *f, int current_node, int destination_node, int i
          << " localmv3:" << local_move3 
          << " global1:" << global_port1 
          << " global2:" << global_port2 
-         << " routing:" << routing_result << endl;
+         << " routing:" << routing_result
+	 << " weight:"  << oklist[0][5] << endl;
 }
 
 
