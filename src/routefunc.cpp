@@ -35,7 +35,7 @@
  *format is rfname_topologyname. 
  *
  */
-#include <bit>
+#include <bitset>
 #include <map>
 #include <cstdlib>
 #include <cassert>
@@ -1996,10 +1996,10 @@ int hyperport_cal(int hypercube_mv, int in_port, int in_vc){
      if (hport >= Hypercubeport) {hport=0;} 
      for(int i = hport+1 ; i <= Hypercubeport; i++){
      //for(int i = 0 ; i < Hypercubeport; i++){
-        int dim; 
-     	if(vc==0||vc==VCNUM){dim = order1[i-1];}
-	if(vc==1||vc==VCNUM+1){dim = order2[i-1];}
-	if(vc==2||vc==VCNUM+2){dim = order3[i-1];}
+        int dim = -1; 
+     	if(in_vc==0||in_vc==VCNUM){dim = order1[i-1];}
+	if(in_vc==1||in_vc==VCNUM+1){dim = order2[i-1];}
+	if(in_vc==2||in_vc==VCNUM+2){dim = order3[i-1];}
      	//if(((hypercube_mv >> (i-1)) & 1) == 1){
         if(((hypercube_mv >> dim) & 1) == 1){
 	     out_port = i;
@@ -2045,7 +2045,7 @@ LocalMoveResult process_local_move(int current, int dest, int hypercube_mv, int 
     LocalMoveResult result = {current, 0, false, false};
     int local_port = 0;
     
-    if (hop_size == 0) {
+    if (hypercube_mv == 0) {
         return result;
     }
     int mv = 0;
@@ -2132,9 +2132,12 @@ void source_routing(const Flit *f, int current_node, int destination_node, int i
             int hypercube_mv1 = i;
 	    int hypercube_mv2 = j;
 	    int hypercube_mv3 = hypercube_moves^i^j; 
-	    int weight = popcount(hypercube_mv1)+ popcount(hypercube_mv2) +  popcount(hypercube_mv3);
+	    bitset<8> bit1(hypercube_mv1);
+	    bitset<8> bit2(hypercube_mv2);
+	    bitset<8> bit3(hypercube_mv3);
+	    int weight = bit1.count() + bit2.count() + bit3.count();
 
-            cout << "source routing hypercube hops:" << hop1_size << " " << hop2_size << " " << hop3_size << endl;
+            cout << "source routing hypercube hops:" << bitset<8>(hypercube_mv1) << " " << bitset<8>(hypercube_mv2) << " " << bitset<8>(hypercube_mv3) << endl;
 
             local_routing_complete = (bitmask(current, Hypercubeport) == bitmask(dest, Hypercubeport));
             global_routing_complete = (current_group == dest_group);
