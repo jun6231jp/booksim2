@@ -2082,7 +2082,7 @@ LocalMoveResult process_local_move(int current, int dest, int hypercube_mv, int 
 	    cout << "node" << current << endl;
         }
         else if (fault_table[current][local_port_temp]) {
-            cout << "source routing id:" << id << " local move node" << current << " port" << local_port_temp << " err" << endl;
+            cout << "source routing id:" << id << " local:" << (in_vc%VCNUM)+1 << " node" << current << " port" << local_port_temp << " err" << endl;
             result.fault_detected = true;
             break;
         }
