@@ -621,7 +621,6 @@ void IQRouter::_VCAllocEvaluate( )
 	vc_start = iset->vc_start;
 	vc_end = iset->vc_end;
       }
-      cout << "IQrouter id:" << f->pid << " vcstart:" << vc_start << " vcs:" << _vcs << endl;
       assert(vc_start >= 0 && vc_start < _vcs);
       assert(vc_end >= 0 && vc_end < _vcs);
       assert(vc_end >= vc_start);
