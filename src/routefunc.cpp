@@ -2076,13 +2076,13 @@ LocalMoveResult process_local_move(int current, int dest, int hypercube_mv, int 
 	if (local_port_temp >= 0 && !fault_table[current][local_port_temp]) {
             local_port = local_port_temp;
 	    dim_order = dim_order_temp;
-	    //cout << "source routing id:" << id << " local:" << (in_vc%VCNUM)+1 << " node" << current << " -> ";
+	    cout << "source routing id:" << id << " local:" << (in_vc%VCNUM)+1 << " node" << current << " -> ";
             current ^= (1 << (local_port - 1));
             mv ^= (1 << (local_port - 1));
-	    //cout << "node" << current << endl;
+	    cout << "node" << current << endl;
         }
         else if (fault_table[current][local_port_temp]) {
-            //cout << "source routing id:" << id << " local:" << (in_vc%VCNUM)+1 << " node" << current << " port" << local_port_temp << " err" << endl;
+            cout << "source routing id:" << id << " local:" << (in_vc%VCNUM)+1 << " node" << current << " port" << local_port_temp << " err" << endl;
             result.fault_detected = true;
             break;
         }
@@ -2112,9 +2112,9 @@ GlobalMoveResult process_global_move(int current, int current_group, int dest_gr
     
     int global_port = polarport_cal(current_group, dest_group);
     if (!fault_table[current][global_port]) {
-	//cout << "source routing id:" << id << " grp" << current_group << " -> ";
+	cout << "source routing id:" << id << " grp" << current_group << " -> ";
         current_group = polarfly_connection_table[current_group][global_port - Hypercubeport - 1];
-        //cout << "grp" << current_group << endl;
+        cout << "grp" << current_group << endl;
 	current = current_group * (1 << Hypercubeport) + bitmask(current, Hypercubeport);
         
         if (current_group == dest_group) {
@@ -2123,9 +2123,9 @@ GlobalMoveResult process_global_move(int current, int current_group, int dest_gr
         result.global_port = global_port;
     }
     else {
-        //cout << "source routing id:" << id << " global" << phase << " node" 
-        //     << current
-        //     << " port" << global_port << " err" << endl;
+        cout << "source routing id:" << id << " global" << phase << " node" 
+             << current
+             << " port" << global_port << " err" << endl;
     }
     
     result.current = current;
@@ -2166,7 +2166,7 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
 	    bitset<8> bit2(hypercube_mv2);
 	    bitset<8> bit3(hypercube_mv3);
 	    int weight = bit1.count() + bit2.count() + bit3.count();
-            //cout << "source routing id:" << f->pid << " hypercube hops:" << bitset<8>(hypercube_mv1) << " " << bitset<8>(hypercube_mv2) << " " << bitset<8>(hypercube_mv3) << endl;
+            cout << "source routing id:" << f->pid << " hypercube hops:" << bitset<8>(hypercube_mv1) << " " << bitset<8>(hypercube_mv2) << " " << bitset<8>(hypercube_mv3) << endl;
 
             local_routing_complete = (bitmask(current, Hypercubeport) == bitmask(dest, Hypercubeport));
             global_routing_complete = (current_group == dest_group);
@@ -2254,7 +2254,9 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
     });
 
     if(oklist.size()==0 && (current_node>>Hypercubeport)==(destination_node>>Hypercubeport)){// polarfly escape
-        for (int i = 0; i < (1<<Hypercubeport); i++) {
+        local_move1 = 0; local_move2 = 0; local_move3 = 0;	    
+	global_port1 = 0; global_port2 = 0;
+    	for (int i = 0; i < (1<<Hypercubeport); i++) {
          for (int j = 0 ; j < (1<<Hypercubeport); j++) {
           for(int k = 0; k < Polarflyport; k++){
 	    bool local_routing_complete = false;
@@ -2292,6 +2294,7 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
                 if (result.fault_detected) continue;
                 current = result.current;
                 local_move2 = result.local_move;
+                local_routing_complete = result.routing_complete;
             }
 	    //global back 2
             result = process_global_move(current, current_group, dest_group, 2, f->pid);
@@ -2301,7 +2304,8 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
             global_port2 = result.global_port;
             global_routing_complete = result.routing_complete;
 	    if(!global_routing_complete)continue;   
-            if (hypercube_mv3 > 0) {
+            //local move 3
+	    if (hypercube_mv3 > 0) {
                 auto result = process_local_move(current, dest, hypercube_mv3, in_vc+2, f->pid);
                 if (result.fault_detected) continue;
                 current = result.current;
@@ -2317,8 +2321,15 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
 	}
     }
 
-    if(oklist.size()==0){routing_result=1;} 
-
+    if(oklist.size()==0){
+      routing_result=1;
+      local_move1 = 0;
+      local_move2 = 0;
+      local_move3 = 0;
+      global_port1 = 0;
+      global_port2 = 0;
+      min_ok_weight = 0;
+    } 
     else{
       local_move1 = oklist[0][0];
       local_move2 = oklist[0][1];
