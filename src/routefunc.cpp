@@ -2207,6 +2207,7 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
                 local_routing_complete = result.routing_complete;
             }
             if(global_port1 == 0 && local_move1 == 0)continue;
+	    if(global_port1 == 0 && local_move1+local_move2 == hypercube_moves && local_move2 > 0)continue;
 	    if (local_routing_complete && global_routing_complete) {
 		vector<int> okpath = {local_move1,local_move2,local_move3,global_port1,global_port2,weight};
                 oklist.push_back(okpath);
@@ -2235,6 +2236,8 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
                 local_routing_complete = result.routing_complete;
             }
 	    if(global_port2 == 0 && local_move2 == 0)continue;
+	    if(global_port1 == 0 && (local_move1+local_move2) == (hypercube_moves^local_move3) && local_move2 > 0)continue;
+	    if(global_port2 == 0 && (local_move2+local_move3) == (hypercube_moves^local_move1) && local_move3 > 0)continue;
 	    if (local_routing_complete && global_routing_complete){
 	        vector<int> okpath = {local_move1,local_move2,local_move3,global_port1,global_port2,weight};
                 oklist.push_back(okpath);
@@ -2244,10 +2247,18 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
     }
 
     sort(oklist.begin(), oklist.end(), [](const vector<int>& a, const vector<int>& b) {
-        return a[5] < b[5];
+        if(a[5] != b[5])return a[5] < b[5];
+        if(a[0] != b[0])return a[0] > b[0];
+	if(a[1] != b[1])return a[1] > b[1];
+	return a[2] > b[2];
     });
 
+    if(oklist.size()==0 && (current_node>>Hypercubeport)==(destination_node>>Hypercubeport)){// polarfly escape
+
+    }
+
     if(oklist.size()==0){routing_result=1;} 
+
     else{
       local_move1 = oklist[0][0];
       local_move2 = oklist[0][1];
@@ -2316,35 +2327,68 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 	  const int local_mv3 = ((int*)f->data)[2];
 	  const int global_port1 = ((int*)f->data)[3];
 	  const int global_port2 = ((int*)f->data)[4];
-          //cout << "routefunc polarfly+ id:" << f->pid << " local1:" << local_mv1 << " local2:" << local_mv2 << " local3:" << local_mv3 << " global1:" << global_port1 << " global2:" << global_port2 << endl;
-            if(in_port < Hypercubeport) { //Local receive : local move
-              for(int i = in_port; i < Hypercubeport; i++){
-                if(in_vc == 0 || in_vc == 3){
-      		      if((local_mv1 >> i)%2==1){
-			out_port=i+1;
+          int order=0;
+          if(in_vc == 0){for(int i=0;i<Hypercubeport;i++){if(in_port==order0[i]+1){order=i;}}}
+          if(in_vc == 1){for(int i=0;i<Hypercubeport;i++){if(in_port==order1[i]+1){order=i;}}}
+          if(in_vc == 2){for(int i=0;i<Hypercubeport;i++){if(in_port==order2[i]+1){order=i;}}}
+          if(in_vc == 3){for(int i=0;i<Hypercubeport;i++){if(in_port==order3[i]+1){order=i;}}}
+          if(in_vc == 4){for(int i=0;i<Hypercubeport;i++){if(in_port==order4[i]+1){order=i;}}}
+          if(in_vc == 5){for(int i=0;i<Hypercubeport;i++){if(in_port==order5[i]+1){order=i;}}}
+          if(in_port==0)order=-1;
+	  
+	  if(order < Hypercubeport) { //Local receive : local move
+              for(int i = order+1; i < Hypercubeport; i++){
+                if(in_vc == 0){
+      		      if((local_mv1 >> order0[i])%2==1){
+			out_port=order0[i]+1;
 		        out_vc=in_vc;
 			cout << "routefunc polarfly+ id:" << f->pid << " local move1 port" << out_port << " vc" << out_vc << endl;
 			break;
 		      }
 		}
-		else if (in_vc == 1 || in_vc == 4){
-                      if((local_mv2 >> i)%2==1){
-                        out_port=i+1;
+		else if (in_vc == 1){
+                      if((local_mv2 >> order1[i])%2==1){
+                        out_port=order1[i]+1;
                         out_vc=in_vc;
                         cout << "routefunc polarfly+ id:" << f->pid << " local move2 port" << out_port << " vc" << out_vc << endl;
                         break;
                       }
 		}
-		else if (in_vc == 2 || in_vc == 5){
-                      if((local_mv3 >> i)%2==1){
-                        out_port=i+1;
+		else if (in_vc == 2){
+                      if((local_mv3 >> order2[i])%2==1){
+                        out_port=order2[i]+1;
                         out_vc=in_vc;
-                        cout << "routefunc polarfly+ id:" << f->pid << " local move3 port" << out_port << " vc" << out_vc << endl;                           break;
+                        cout << "routefunc polarfly+ id:" << f->pid << " local move3 port" << out_port << " vc" << out_vc << endl;
+			break;
                       }
 		}
+		else if(in_vc == 3){
+		      if((local_mv1 >> order3[i])%2==1){
+		        out_port=order3[i]+1;
+			out_vc=in_vc;
+			cout << "routefunc polarfly+ id:" << f->pid << " local move1 port" << out_port << " vc" << out_vc << endl;
+     			break;
+		      } 
+		}
+		else if (in_vc == 4){
+		      if((local_mv2 >> order4[i])%2==1){
+			out_port=order4[i]+1; 
+			out_vc=in_vc;
+			cout << "routefunc polarfly+ id:" << f->pid << " local move2 port" << out_port << " vc" << out_vc << endl;
+     			break;
+		      }
+		}
+		else if (in_vc == 5){
+		      if((local_mv3 >> order5[i])%2==1){
+			out_port=order5[i]+1;
+			out_vc=in_vc;
+			cout << "routefunc polarfly+ id:" << f->pid << " local move3 port" << out_port << " vc" << out_vc << endl;
+     			break;
+		      } 
+		}
 	      }
-	    } 
-            if(in_port == Hypercubeport || (in_port <= Hypercubeport && out_port == -1)) { //Local LSB receive or No local move : local -> global move 
+	    }
+            if(order == Hypercubeport || (in_port <= Hypercubeport && out_port == -1)) { //Local LSB receive or No local mv : local -> global
                if (in_vc == 0 || in_vc == 3){
                  if(global_port1>0){
 	           out_port = global_port1;
@@ -2361,43 +2405,75 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 	       }
 	       if(out_port == -1){//no global move: local -> local
 	         for(int i = 0; i < Hypercubeport; i++){
-                     if (in_vc == 0 || in_vc == 3){
-                        if((local_mv2 >> i)%2==1){
-	                   out_port=i+1;
-	                   out_vc=in_vc+1;
-	                   cout << "routefunc polarfly+ id:" << f->pid << " local move2 port" << out_port << " vc" << out_vc << endl;
-			   break;
+                     if (in_vc == 0){
+                        if((local_mv2 >> order1[i])%2==1){
+	                  out_port=order1[i]+1;
+	                  out_vc=in_vc+1;
+	                  cout << "routefunc polarfly+ id:" << f->pid << " local move.2 port" << out_port << " vc" << out_vc << endl;
+			  break;
 		       	}
 		     }
-                     else if (in_vc == 1 || in_vc == 4){
-                        if((local_mv3 >> i)%2==1){
-			  out_port=i+1;
+                     else if (in_vc == 1){
+                        if((local_mv3 >> order2[i])%2==1){
+			  out_port=order2[i]+1;
 			  out_vc=in_vc+1;
-			  cout << "routefunc polarfly+ id:" << f->pid << " local move3 port" << out_port << " vc" << out_vc << endl;
+			  cout << "routefunc polarfly+ id:" << f->pid << " local move.3 port" << out_port << " vc" << out_vc << endl;
                           break;
                         }
 		     }
+		     else if (in_vc == 3){
+           	        if((local_mv2 >> order4[i])%2==1){
+			  out_port=order4[i]+1;
+		          out_vc=in_vc+1;
+	                  cout << "routefunc polarfly+ id:" << f->pid << " local move.2 port" << out_port << " vc" << out_vc << endl;
+	                  break;
+			}
+		     }
+		     else if (in_vc == 4){
+			if((local_mv3 >> order5[i])%2==1){
+		          out_port=order5[i]+1;
+		          out_vc=in_vc+1;
+		          cout << "routefunc polarfly+ id:" << f->pid << " local move.3 port" << out_port << " vc" << out_vc << endl;
+                          break;
+                        }
+                     }
 		  }
 	       }
    	    }
             if(in_port > Hypercubeport) {  //Global receive: global -> local move 
               for(int i = 0;i < Hypercubeport ; i++){
-                if (in_vc == 0 || in_vc == 3){  
-      		      if((local_mv2 >> i)%2==1){
-                        out_port=i+1;
+                if (in_vc == 0){  
+      		      if((local_mv2 >> order1[i])%2==1){
+                        out_port=order1[i]+1;
                         out_vc=in_vc+1;
                         cout << "routefunc polarfly+ id:" << f->pid << " local move2 port" << out_port << " vc" << out_vc << endl;
                         break;
 		      }
 		 }
-		 else if (in_vc == 1 || in_vc == 4){
-                      if((local_mv3 >> i)%2==1){
-                        out_port=i+1;
+		 else if (in_vc == 1){
+                      if((local_mv3 >> order2[i])%2==1){
+                        out_port=order2[i]+1;
                         out_vc=in_vc+1;
 			cout << "routefunc polarfly+ id:" << f->pid << " local move3 port" << out_port << " vc" << out_vc << endl;
                         break;
                       }
 		 }
+		 else if (in_vc == 3){
+                      if((local_mv2 >> order4[i])%2==1){
+                        out_port=order4[i]+1;
+                        out_vc=in_vc+1;
+                        cout << "routefunc polarfly+ id:" << f->pid << " local move2 port" << out_port << " vc" << out_vc << endl;
+                        break;
+                      }
+                 }
+                 else if (in_vc == 4){
+                      if((local_mv3 >> order5[i])%2==1){
+                        out_port=order5[i]+1;
+                        out_vc=in_vc+1;
+                        cout << "routefunc polarfly+ id:" << f->pid << " local move3 port" << out_port << " vc" << out_vc << endl;
+                        break;
+                      }
+                 }
               }
 	      if (out_port==-1){ //Global receive no hypercube mv: global -> global
                  out_port = global_port2;
@@ -2500,6 +2576,7 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 		  if (out_port > -1 ) out_vc = in_vc + 1;
            }
 */	   
+	   if(out_port==-1){cout << "routefunc polarfly+ router:" << r->FullName() << "#" << r->GetID( ) << " id:" << f->pid << " outporterr" << endl;}
            assert(out_port > -1);
     } 
     
