@@ -2336,7 +2336,7 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
           if(in_vc == 5){for(int i=0;i<Hypercubeport;i++){if(in_port==order5[i]+1){order=i;}}}
           if(in_port==0)order=-1;
 	  
-	  if(order < Hypercubeport) { //Local receive : local move
+	  if(in_port <= Hypercubeport && order < Hypercubeport) { //Local receive : local move
               for(int i = order+1; i < Hypercubeport; i++){
                 if(in_vc == 0){
       		      if((local_mv1 >> order0[i])%2==1){
@@ -2388,7 +2388,7 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
 		}
 	      }
 	    }
-            if(order == Hypercubeport || (in_port <= Hypercubeport && out_port == -1)) { //Local LSB receive or No local mv : local -> global
+            if((in_port <= Hypercubeport && order == Hypercubeport) || (in_port <= Hypercubeport && out_port == -1)) { //Local LSB receive or No local mv : local -> global
                if (in_vc == 0 || in_vc == 3){
                  if(global_port1>0){
 	           out_port = global_port1;
