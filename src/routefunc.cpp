@@ -2148,7 +2148,6 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
     int min_weight = bit_min.count();
 
     make_order();
-
     for (int i = 0; i < (1<<Hypercubeport); i++) {
         bool local_routing_complete = false;
         bool global_routing_complete = false;
@@ -2194,7 +2193,6 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
                 global_routing_complete = result.routing_complete;
             }
 	    if((global_port1 == 0) && (local_move1 == 0))continue;
-            if((global_port1 == 0) && (hypercube_mv1+hypercube_mv2+hypercube_mv3 == hypercube_moves))continue;
 	    if (local_routing_complete && global_routing_complete){
                 vector<int> okpath = {local_move1,local_move2,local_move3,global_port1,global_port2,weight};
                 oklist.push_back(okpath);
@@ -2223,7 +2221,6 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
                 global_routing_complete = result.routing_complete;
             }
 	    if((global_port2 == 0) && (local_move2 == 0))continue;
-            if((global_port2 == 0) && (hypercube_mv1+hypercube_mv2+hypercube_mv3 == hypercube_moves))continue;
 	    if (local_routing_complete && global_routing_complete){
 	        vector<int> okpath = {local_move1,local_move2,local_move3,global_port1,global_port2,weight};
                 oklist.push_back(okpath);
@@ -2265,6 +2262,7 @@ void source_routing(const Flit *f, int current_node, int destination_node) {
             int hypercube_mv3 = j;
 	    int hypercube_mv2 = i;
 	    int hypercube_mv1 = hypercube_moves^i^j;
+	    if (hypercube_mv2==0)continue;
 	    bitset<8> bit1(hypercube_mv1);
 	    bitset<8> bit2(hypercube_mv2);
 	    bitset<8> bit3(hypercube_mv3);
