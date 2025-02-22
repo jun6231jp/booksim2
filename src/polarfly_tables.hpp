@@ -24,7 +24,8 @@ const int polarfly_connection_table[7][3] = {
 const int total_node = 1792;
 const int node_port = 12;
 extern bool fault_table[1792][12];
-
+extern bool fault_nodes[1792];
+extern int traffic_table[1792][12];
 
 #elif defined(USE_TABLE_13x4)
 const int POLARFLY_TABLE_ROWS = 13;
@@ -47,6 +48,8 @@ const int polarfly_connection_table[13][4] = {
 const int total_node = 3328;
 const int node_port = 13;
 extern bool fault_table[3328][13];
+extern bool fault_nodes[3328];
+extern int traffic_table[3328][13];
 
 #elif defined(USE_TABLE_31x6)
 const int POLARFLY_TABLE_ROWS = 31;
@@ -87,6 +90,8 @@ const int polarfly_connection_table[31][6] = {
 const int total_node = 7936;
 const int node_port = 15;
 extern bool fault_table[7936][15];
+extern bool fault_nodes[7936];
+extern int traffic_table[7936][15];
 
 #elif defined(USE_TABLE_57x8)
 const int POLARFLY_TABLE_ROWS = 57;
@@ -153,7 +158,8 @@ const int polarfly_connection_table[57][8] = {
 const int total_node = 14592;
 const int node_port = 17;
 extern bool fault_table[14592][17];
-
+extern bool fault_nodes[14592];
+extern int traffic_table[14592][17];
 #else
 #error "No table size selected! Uncomment one of the USE_TABLE_* defines"
 

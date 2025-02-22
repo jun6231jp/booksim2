@@ -31,7 +31,6 @@
 #include <limits>
 #include <cstdlib>
 #include <ctime>
-
 #include "booksim.hpp"
 #include "booksim_config.hpp"
 #include "trafficmanager.hpp"
@@ -39,11 +38,15 @@
 #include "random_utils.hpp" 
 #include "vc.hpp"
 #include "packet_reply_info.hpp"
-
-
+#include "polarfly_tables.hpp"
+int Hypercube_port;
+int Polarfly_port;
 TrafficManager * TrafficManager::New(Configuration const & config,
                                      vector<Network *> const & net)
 {
+    Hypercube_port = config.GetInt("k");
+    Polarfly_port = config.GetInt("n");
+
     TrafficManager * result = NULL;
     string sim_type = config.GetStr("sim_type");
     if((sim_type == "latency") || (sim_type == "throughput")) {
@@ -791,14 +794,15 @@ int TrafficManager::_IssuePacket( int source, int cl )
 
 void TrafficManager::_GeneratePacket( int source, int stype, 
                                       int cl, int time )
-{
+{  
     assert(stype!=0);
     Flit::FlitType packet_type = Flit::ANY_TYPE;
     int size = _GetNextPacketSize(cl); //input size 
     int pid = _cur_pid++;
     assert(_cur_pid);
     int packet_destination = _traffic_pattern[cl]->dest(source);
-
+    if (fault_nodes[source]){return;}
+    if (fault_nodes[packet_destination]){return;}
     cout << "TrafficManager GeneratePacket id:" << pid << " source:" << source << " type:" << stype << " class:" << cl << " time:" << time << " dest:" << packet_destination << endl;
     bool record = false;
     bool watch = gWatchOut && (_packets_to_watch.count(pid) > 0);
@@ -1016,7 +1020,6 @@ void TrafficManager::_Step( )
         _Inject();
     }
     for(int subnet = 0; subnet < _subnets; ++subnet) {
-       
         for(int n = 0; n < _nodes; ++n) {
             
             Flit * f = NULL;
@@ -2050,7 +2053,7 @@ void TrafficManager::DisplayStats(ostream & os) const {
         cout << "Total in-flight flits = " << _total_in_flight_flits[c].size()
              << " (" << _measured_in_flight_flits[c].size() << " measured)"
              << endl;
-    
+
 #ifdef TRACK_STALLS
         _ComputeStats(_buffer_busy_stalls[c], &count_sum);
         rate_sum = (double)count_sum / time_delta;
@@ -2073,7 +2076,7 @@ void TrafficManager::DisplayStats(ostream & os) const {
         rate_avg = rate_sum / (double)(_subnets*_routers);
         os << "Crossbar conflict stall rate = " << rate_avg << endl;
 #endif
-    
+
     }
 }
 
@@ -2165,7 +2168,17 @@ void TrafficManager::DisplayOverallStats( ostream & os ) const {
            << "Crossbar conflict stall rate = " << (double)_overall_crossbar_conflict_stalls[c] / (double)_total_sims
            << " (" << _total_sims << " samples)" << endl;
 #endif
-    
+    for(int i = 0 ; i < POLARFLY_TABLE_ROWS*(1<<Hypercube_port); i++ ){
+     	cout << "##node" << i << " : ";
+        for(int j = 0; j <= Hypercube_port + Polarfly_port; j++) {
+            int sum =0;
+	    for(int k = j; k < node_port; k++) {
+                sum+=traffic_table[i][k];
+	    }
+            cout << traffic_table[i][j] << " " ;
+        } cout << endl;
+   }
+   
     }
   
 }

@@ -41,6 +41,7 @@
 
 int gP_polar, gA_polar, gG_polar;
 bool fault_table[total_node][node_port] = {false};
+bool fault_nodes[total_node] = {false};
 
 
 //Hypercube : Local (group)
@@ -296,17 +297,52 @@ void PolarFlyplusNew::InsertRandomFaults( const Configuration &config )
     RandomSeed( fail_seed );
 
     vector<bool> fail_nodes(_size);
-
+    /*
     for ( int i = 0; i < num_fails; i++ ) {
       int node = RandomInt( _size - 1 );
       int chan = RandomInt( _size * ( Hypercubeport + Polarflyport ) ) % ( Hypercubeport + Polarflyport ) + 1;
       OutChannelFault( node, chan );
       fault_table[node][chan]=true;
-      cout << "failure at node" << node << " port" << chan << endl;
+      cout << "failure at node" << node << " out_port" << chan << endl;
     }
+    */
+    
+    for ( int i = 0; i < num_fails; i++ ) {
+      int failnode = RandomInt( _size - 1 );
+      fault_nodes[failnode] = true;
+      for(int j = 0; j <  Hypercubeport + Polarflyport ; j++){
+         int pairnode=-1;
+	 int pairport=-1;
+     	 if(j < Hypercubeport){
+	   pairnode = failnode ^ (1<<j);
+	   pairport = j+1;
+	 }
+	 else{
+           int failgrp = failnode >> Hypercubeport;
+	   int pairgrp = polarfly_connection_table[failgrp][j-Hypercubeport];
+           pairnode = pairgrp*(1<<Hypercubeport) + (failnode % (1<<Hypercubeport));
+	   for(int k = 0 ; k < Polarflyport; k++){
+	      if(polarfly_connection_table[pairgrp][k]==failgrp){
+	          pairport=Hypercubeport+k+1;
+		  //break;
+	      }
+	   } 
+	 }
+         OutChannelFault( pairnode, pairport );
+         fault_table[pairnode][pairport]=true;
+    }
+      cout << "failure at node" << failnode << endl;
+    }
+    
     RestoreRandomState( save_x, save_u );
   }
-  for(int i = 0 ; i < 7*(1<<Hypercubeport); i++){
+  for(int i = 0 ; i < Polarflysize*(1<<Hypercubeport); i++){
+     cout << "fault node:" << i << " ";
+     if(!fault_nodes[i]){cout << "O";}
+     else {cout << "X";}
+     cout << endl;
+  }
+  for(int i = 0 ; i < Polarflysize*(1<<Hypercubeport); i++){
       cout << "fault table: node" << i << " " ;
       for(int j = 0 ; j < Polarflyport+Hypercubeport+1 ; j++){
         if(!fault_table[i][j]){cout << "O";}
