@@ -56,7 +56,7 @@
 
 #define VCNUM 3 //Total VC: VCNUM*2 (Request+Reply)
 map<string, tRoutingFunction> gRoutingFunctionMap;
-int  Hypercubeport,Polarflyport;
+int  Hypercubeport,Polarflyport,pc_threshold;
 /* Global information used by routing functions */
 int Faultescape=0;
 int gNumVCs;
@@ -2364,8 +2364,14 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
    outputs->Clear( );
    int out_port=-1;
    int out_vc=0;
+   //step counter update
+
+   int cur_step = r->step_cal(1); 
+   
    if(inject) {
       outputs->AddRange( -1, 0, 0);
+      f->step=cur_step;
+      r->tx_count();
    } else {
 
     int in_vc=f->vc;
@@ -2382,6 +2388,8 @@ void dim_order_polarflyplus( const Router *r, const Flit *f, int in_channel,
             cout << "routefunc polarfly+ id:" << f->pid << " eject" << endl;
             out_port = 0; // Eject
 	    out_vc = in_vc;
+	    r->rx_count(f->step);
+	    //f->step = r->PC_increment(f->step, 1);
     }
     else {
           //==================source routing==================== 
@@ -2681,7 +2689,7 @@ void InitializeRoutingMap( const Configuration & config )
   Hypercubeport = config.GetInt( "k" );
   Polarflyport = config.GetInt( "n" );
   gNumVCs = config.GetInt( "num_vcs" );
-
+  pc_threshold =  config.GetInt( "pc_threshold" );
   //
   // traffic class partitions
   //

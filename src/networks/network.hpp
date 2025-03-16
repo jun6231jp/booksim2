@@ -97,7 +97,7 @@ public:
   void Display( ostream & os = cout ) const;
   void DumpChannelMap( ostream & os = cout, string const & prefix = "" ) const;
   void DumpNodeMap( ostream & os = cout, string const & prefix = "" ) const;
-
+  
   int NumChannels() const {return _channels;}
   const vector<FlitChannel *> & GetInject() {return _inject;}
   FlitChannel * GetInject(int index) {return _inject[index];}
@@ -112,6 +112,8 @@ public:
   const vector<Router *> & GetRouters(){return _routers;}
   Router * GetRouter(int index) {return _routers[index];}
   int NumRouters() const {return _size;}
+  
+  
 };
 
 #endif 

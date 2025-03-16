@@ -763,7 +763,7 @@ void TrafficManager::_RetireFlit( Flit *f, int dest )
 int TrafficManager::_IssuePacket( int source, int cl )
 {
     int result = 0;
-    if(_use_read_write[cl]){ //use read and write
+    if(_use_read_write[cl]){ //use read and write : batch mode
         //check queue for waiting replies.
         //check to make sure it is on time yet
         if (!_repliesPending[source].empty()) {
@@ -781,7 +781,7 @@ int TrafficManager::_IssuePacket( int source, int cl )
                 _requestsOutstanding[source]++;
             }
         }
-    } else { //normal mode
+    } else { //normal mode : Injection mode
         result = _injection_process[cl]->test(source) ? 1 : 0;
         _requestsOutstanding[source]++;
     } 
@@ -798,11 +798,13 @@ void TrafficManager::_GeneratePacket( int source, int stype,
     assert(stype!=0);
     Flit::FlitType packet_type = Flit::ANY_TYPE;
     int size = _GetNextPacketSize(cl); //input size 
-    int pid = _cur_pid++;
-    assert(_cur_pid);
+    //int pid = _cur_pid++;
+    //assert(_cur_pid);
     int packet_destination = _traffic_pattern[cl]->dest(source);
     if (fault_nodes[source]){return;}
     if (fault_nodes[packet_destination]){return;}
+    int pid = _cur_pid++;
+    assert(_cur_pid);
     cout << "TrafficManager GeneratePacket id:" << pid << " source:" << source << " type:" << stype << " class:" << cl << " time:" << time << " dest:" << packet_destination << endl;
     bool record = false;
     bool watch = gWatchOut && (_packets_to_watch.count(pid) > 0);
@@ -932,9 +934,13 @@ void TrafficManager::_GeneratePacket( int source, int stype,
 }
 
 void TrafficManager::_Inject(){
-
+    int packet_chk[_nodes]={0};
+    int complete=0;
+    while(complete==0){
     for ( int input = 0; input < _nodes; ++input ) {
-        for ( int c = 0; c < _classes; ++c ) {
+        //get step
+        int step=(_net[0]->GetRouter(input))->step_cal(threshold);
+	for ( int c = 0; c < _classes; ++c ) {
             // Potentially generate packets for any (input,class)
             // that is currently empty
 	
@@ -961,6 +967,12 @@ void TrafficManager::_Inject(){
                 }
             }
         }
+    }
+    int sum=0;
+    for ( int input = 0; input < _nodes; ++input ) {
+       sum += packet_chk[input]:
+    }
+    if(sum==_node){complete=1;}
     }
 }
 

@@ -70,7 +70,9 @@ public:
   int  hops;
   bool watch;
   int  subnetwork;
-  
+
+  mutable int step; //used for multistep traffic pattern in Trafficmanager.cpp
+
   // intermediate destination (if any)
   mutable int intm;
 

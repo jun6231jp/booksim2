@@ -157,6 +157,8 @@ BookSimConfig::BookSimConfig( )
 
   AddStrField( "traffic", "uniform" );
 
+  AddStrField( "traffic", "pairwise" ); //add
+
   _int_map["class_priority"] = 0;
   AddStrField("class_priority", ""); // workaraound to allow for vector specification
 

@@ -37,6 +37,7 @@
 #include "flitchannel.hpp"
 #include "channel.hpp"
 #include "config_utils.hpp"
+#include "polarfly_tables.hpp"
 
 typedef Channel<Credit> CreditChannel;
 
@@ -66,6 +67,11 @@ protected:
   int _crossbar_delay;
   int _credit_delay;
   
+  mutable int _step_tx=0;
+  mutable int _step_rx=0;
+  mutable int _rx_counter[100]={0};
+  mutable int _tx_counter=0;
+
   vector<FlitChannel *>   _input_channels;
   vector<CreditChannel *> _input_credits;
   vector<FlitChannel *>   _output_channels;
@@ -120,6 +126,18 @@ public:
 
   inline int GetID( ) const { return _id;}
 
+  int step_cal ( int threshold ) const { 
+	  if(_rx_counter[_step_rx] >= threshold){_step_rx++;}
+	  if(_tx_counter >= threshold){_step_tx++; _tx_counter=0;}
+	  if(_step_rx > _step_tx){ return _step_tx;}
+	  else{ return _step_rx;}
+  }
+  void rx_count ( int step ) const {
+    _rx_counter[step]++;
+  }
+  void tx_count ( ) const {
+    _tx_counter++;
+  }
 
   virtual int GetUsedCredit(int o) const = 0;
   virtual int GetBufferOccupancy(int i) const = 0;

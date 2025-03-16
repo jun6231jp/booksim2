@@ -41,7 +41,7 @@ protected:
 public:
   virtual ~TrafficPattern() {}
   virtual void reset();
-  virtual int dest(int source) = 0;
+  virtual int dest(int source, int step=0) = 0;
   static TrafficPattern * New(string const & pattern, int nodes, 
 			      Configuration const * const config = NULL);
 };
@@ -68,6 +68,12 @@ protected:
 public:
   TransposeTrafficPattern(int nodes);
   virtual int dest(int source);
+};
+//add
+class PairwiseTrafficPattern : public TrafficPattern {
+public:
+  PairwiseTrafficPattern(int nodes);
+  virtual int dest(int source,int step);
 };
 
 class BitRevTrafficPattern : public BitPermutationTrafficPattern {
