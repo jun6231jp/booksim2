@@ -41,11 +41,13 @@
 #include "polarfly_tables.hpp"
 int Hypercube_port;
 int Polarfly_port;
+int threshold;
 TrafficManager * TrafficManager::New(Configuration const & config,
                                      vector<Network *> const & net)
 {
     Hypercube_port = config.GetInt("k");
     Polarfly_port = config.GetInt("n");
+    threshold = config.GetInt("sim_count") * config.GetInt("packet_size"); //??
 
     TrafficManager * result = NULL;
     string sim_type = config.GetStr("sim_type");
@@ -552,6 +554,19 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
         _sent_packets[c].resize(_nodes, 0);
         _accepted_packets[c].resize(_nodes, 0);
         _sent_flits[c].resize(_nodes, 0);
+        _hop_stats[c] = new Stats( this, tmp_name.str( ), 1.0, 20 );
+        _stats[tmp_name.str()] = _hop_stats[c];
+        tmp_name.str("");
+
+        if(_pair_stats){
+            _pair_plat[c].resize(_nodes*_nodes);
+            _pair_nlat[c].resize(_nodes*_nodes);
+            _pair_flat[c].resize(_nodes*_nodes);
+        }
+
+        _sent_packets[c].resize(_nodes, 0);
+        _accepted_packets[c].resize(_nodes, 0);
+        _sent_flits[c].resize(_nodes, 0);
         _accepted_flits[c].resize(_nodes, 0);
 
 #ifdef TRACK_STALLS
@@ -970,9 +985,9 @@ void TrafficManager::_Inject(){
     }
     int sum=0;
     for ( int input = 0; input < _nodes; ++input ) {
-       sum += packet_chk[input]:
+       sum += packet_chk[input];
     }
-    if(sum==_node){complete=1;}
+    if(sum==_nodes){complete=1;}
     }
 }
 

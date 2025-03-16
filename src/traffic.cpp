@@ -70,7 +70,7 @@ TrafficPattern * TrafficPattern::New(string const & pattern, int nodes,
   } else if(pattern_name == "transpose") {
     result = new TransposeTrafficPattern(nodes);
   } else if (pattern_name == "pairwise") {
-	  result = new PairwiseTrafficPattern(nodes, 0);
+	  result = new PairwiseTrafficPattern(nodes);
   }
   else if(pattern_name == "bitrev") {
     result = new BitRevTrafficPattern(nodes);
@@ -252,9 +252,8 @@ int TransposeTrafficPattern::dest(int source)
   return (((source >> _shift) & mask_lo) | ((source << _shift) & mask_hi));
 }
 
-//add
 PairwiseTrafficPattern::PairwiseTrafficPattern(int nodes)
-  : BitPermutationTrafficPattern(nodes)
+  : SteppedTrafficPattern(nodes)
 {
 }
 
