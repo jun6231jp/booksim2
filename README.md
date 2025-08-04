@@ -20,8 +20,18 @@ New Features
   - ring
 
 How to use
-+ simulation
-  - random simulation
++ topology
+The PolarFly size is controlled by the following macros in polarfly_tables.hpp:
+```
+//#define USE_TABLE_1x1 //hypercube
+//#define USE_TABLE_7x3
+//#define USE_TABLE_13x4 
+//#define USE_TABLE_31x6
+//#define USE_TABLE_57x8
+```
+
+
++ random simulation
 
 For 4DxF7 PolarFly+ with 10% offered load random traffic, set the config file as follows:
 ```
@@ -119,7 +129,8 @@ write_reply_size = 1;
 link_failures = 1;
 fail_seed=time;
 ```
-  - collective simulation
+
++ collective simulation
 
 For 3DxF5 PolarFly+ with single-NIC pairwise exchange traffic pattern of 16 length messages, set the config file as follows:
 ```
@@ -260,13 +271,22 @@ injection_rate = 0.125;
 
 ```
 + simulatoin results
-  - cycles for collective traffics 
+
+For PolarFly+ debug messages are controlled with the following macros in polarfly_tables.hpp
+```
+//#define PFP_DEBUG // trafficmanager
+//#define DEBUG_DRAIN // trafficmanager
+//#define PFP_MAP_DEBUG // trafficmanager
+//#define PFP_NET_DEBUG // network
+//#define PFP_FAULT_DEBUG // network
+//#define PFP_ROUTING_DEBUG // routefunc
+//#define PFP_ROUTER_DEBUG // router
+
+```
 
 For PolarFly+ with pairwise exchange, set collective.hpp as follows:
-```
-#ifndef _COLLECTIVE_HPP_
-#define _COLLECTIVE_HPP_
 
+```
 #define PFP_CYCLE_DEBUG // tarfficmanager
 //#define HCUBE_CYCLE_DEBUG 
 //#define FATTREE_CYCLE_DEBUG
@@ -280,27 +300,28 @@ For PolarFly+ with pairwise exchange, set collective.hpp as follows:
 //#define FATTREE_DEBUG
 //#define SWITCH // for 1-tier fat-tree
 
-#define PAIRWISE
-//#define RING
-//#define BYNARYTREE
-
-#ifdef PAIRWISE
-const int max_step = 20;
-#endif
-
-#ifdef RING
-const int max_step = 8192;
-#endif
-
-#ifdef BYNARYTREE
-const int max_step = 20;
-#endif
-
-//#define PAIRWISE_TRAFFIC_DEBUG // traffic
+#define PAIRWISE_TRAFFIC_DEBUG // traffic
 //#define RING_TRAFFIC_DEBUG // traffic
-
-#endif
 
 ```
 
+For the single-tier switch with ring algorithm, set collective.hpp as follows:
 
+```
+//#define PFP_CYCLE_DEBUG // tarfficmanager
+//#define HCUBE_CYCLE_DEBUG 
+#define FATTREE_CYCLE_DEBUG
+
+//#define PFP_STEPUP_DEBUG
+//#define HCUBE_STEPUP_DEBUG
+//#define FATTREE_STEPUP_DEBUG
+//#define HCUBE_ROUTING_DEBUG //routefunc
+//#define TORUS_ROUTING_DEBUG //routefunc
+//#define FATTREE_ROUTING_DEBUG //routefunc
+//#define FATTREE_DEBUG
+#define SWITCH // for 1-tier fat-tree
+
+//#define PAIRWISE_TRAFFIC_DEBUG // traffic
+#define RING_TRAFFIC_DEBUG // traffic
+
+```
