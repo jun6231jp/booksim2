@@ -18,8 +18,9 @@ New Features
   - ring
 
 How to use
-+ random simulation
-For a simlulation for 4DxF7 PolarFly+ with random traffic, set the config file as follows:
++ simulation
+  - random simulation
+For 4DxF7 PolarFly+ with 10% offered load random traffic, set the config file as follows:
 ```
 
 // Topology
@@ -28,7 +29,7 @@ hypercubeport = 4; //hypercube port
 polarflyport = 8; //polarfly port F7:8, F5:6, F3:4, F2:3
 nic = 1; 
 seq = 3;
-//chunk = 114;
+
 // Routing
 routing_function = dim_order;
 credit_delay   = 1; //TX/RX XB (1GHz 1cycle=1ns) 
@@ -43,18 +44,61 @@ internal_speedup  = 1.0; //intermediate router speed 1cycle 1flit
 num_vcs = 6;
 vc_allocator = separable_input_first;
 sw_allocator = separable_input_first;
-vc_buf_size = 800;
+vc_buf_size = 8;
+
+// Traffic
+traffic = uniform;
+
+//latency: drains all packet, throughput:no drain
+sim_type = latency;
+warmup_periods = 100;
+sim_count      = 1;
+sample_period  = 30;
+max_samples = 300;
+
+//1: batch mode, 0: injection mode
+use_read_write = 0;
+
+//for injection mode
+packet_size = 4;
+injection_rate = 0.025;
+
+```
+For 3DxF5 PolarFly+ with 10% offered load random traffic and 1 link failure, set the config file as follows:
+
+```
+
+// Topology
+topology = polarflyplus;
+hypercubeport = 3; //hypercube port
+polarflyport = 6; //polarfly port F7:8, F5:6, F3:4, F2:3
+nic = 1; 
+seq = 3;
+
+//Routing
+routing_function = dim_order;
+credit_delay   = 1; //TX/RX XB (1GHz 1cycle=1ns) 
+routing_delay  = 1; //TX/RX XB 
+vc_alloc_delay = 1; //TX/RX XB
+sw_alloc_delay = 1; //TX/RX XB
+st_final_delay = 10; //XB
+st_prepare_delay = 10;//XB
+input_speedup     = 1; //TX NIC inject rate 1 flit per 1 cycle
+output_speedup    = 1; //RX NIC eject rate 1 flit per 1 cycle
+internal_speedup  = 1.0; //intermediate router speed 1cycle 1flit
+num_vcs = 6;
+vc_allocator = separable_input_first;
+sw_allocator = separable_input_first;
+vc_buf_size = 8;
 
 // Traffic
 traffic = uniform;
 //latency: drains all packet, throughput:no drain?
 sim_type = latency;
-warmup_periods = 300;
+warmup_periods = 100;
 sim_count      = 1;
-sample_period  = 300;
-max_samples    = 1000;
-//collective_threshold = 2;//1;
-//delay_threshold = 1;
+sample_period  = 30;
+max_samples    = 300;
 
 //1: batch mode, 0: injection mode
 use_read_write = 0;
@@ -69,7 +113,146 @@ write_request_size = 1;
 read_reply_size = 1;
 write_reply_size = 1;
 
-//link_failures = 1;
-//fail_seed=time;
+link_failures = 1;
+fail_seed=time;
 ```
-  
+
+  - collective simulation
+For 3DxF5 PolarFly+ with single-NIC pairwise exchange traffic pattern of 16 length messages, set the config file as follows:
+```
+
+// Topology
+topology = polarflyplus;
+hypercubeport = 3; //hypercube port
+polarflyport = 6; //polarfly port F7:8, F5:6, F3:4, F2:3
+nic = 1; 
+seq = 32;
+
+// Routing
+routing_function = dim_order;
+credit_delay   = 1; //TX/RX XB (1GHz 1cycle=1ns) 
+routing_delay  = 1; //TX/RX XB 
+vc_alloc_delay = 1; //TX/RX XB
+sw_alloc_delay = 1; //TX/RX XB
+st_final_delay = 10; //XB
+st_prepare_delay = 10;//XB
+input_speedup     = 1; //TX NIC inject rate 1 flit per 1 cycle
+output_speedup    = 1; //RX NIC eject rate 1 flit per 1 cycle
+internal_speedup  = 1.0; //intermediate router speed 1cycle 1flit
+num_vcs = 6;
+vc_allocator = separable_input_first;
+sw_allocator = separable_input_first;
+vc_buf_size = 1000;
+
+// Traffic
+traffic = pairwise;
+//latency: drains all packet, throughput:no drain?
+sim_type = latency;
+warmup_periods = 0;
+sim_count      = 2;
+sample_period  = 1;
+max_samples    = 100000;
+collective_threshold = 1;
+delay_threshold = 1;
+
+//1: batch mode, 0: injection mode
+use_read_write = 0;
+
+//for injection mode
+packet_size = 16;
+injection_rate = 0.0625;
+
+```
+
+For 6D hypercube with 6-NIC pairwise exchange traffic pattern of 16 length messages, set the config file as follows:
+```
+
+// Topology
+topology = polarflyplus;
+hypercubeport = 6; //hypercube port
+polarflyport = 0; //polarfly port F7:8, F5:6, F3:4, F2:3
+nic = 6; 
+seq = 32;
+
+// Routing
+routing_function = dim_order;
+credit_delay   = 1; //TX/RX XB (1GHz 1cycle=1ns) 
+routing_delay  = 1; //TX/RX XB 
+vc_alloc_delay = 1; //TX/RX XB
+sw_alloc_delay = 1; //TX/RX XB
+st_final_delay = 10; //XB
+st_prepare_delay = 10;//XB
+input_speedup     = 1; //TX NIC inject rate 1 flit per 1 cycle
+output_speedup    = 1; //RX NIC eject rate 1 flit per 1 cycle
+internal_speedup  = 1.0; //intermediate router speed 1cycle 1flit
+num_vcs = 6;
+vc_allocator = separable_input_first;
+sw_allocator = separable_input_first;
+vc_buf_size = 1000;
+
+// Traffic
+traffic = pairwise;
+//latency: drains all packet, throughput:no drain?
+sim_type = latency;
+warmup_periods = 0;
+sim_count      = 2;
+sample_period  = 1;
+max_samples    = 100000;
+collective_threshold = 6;
+delay_threshold = 1;
+
+//1: batch mode, 0: injection mode
+use_read_write = 0;
+
+//for injection mode
+packet_size = 16;
+injection_rate = 0.0625;
+
+```
+
+
+For F7 PolarFly with 2-NIC ring traffic pattern of 8 length messages, set the config file as follows:
+```
+
+// Topology
+topology = polarflyplus;
+hypercubeport = 0; //hypercube port
+polarflyport = 8; //polarfly port F7:8, F5:6, F3:4, F2:3
+nic = 2; 
+seq = 128;
+
+// Routing
+routing_function = dim_order;
+credit_delay   = 1; //TX/RX XB (1GHz 1cycle=1ns) 
+routing_delay  = 1; //TX/RX XB 
+vc_alloc_delay = 1; //TX/RX XB
+sw_alloc_delay = 1; //TX/RX XB
+st_final_delay = 10; //XB
+st_prepare_delay = 10;//XB
+input_speedup     = 1; //TX NIC inject rate 1 flit per 1 cycle
+output_speedup    = 1; //RX NIC eject rate 1 flit per 1 cycle
+internal_speedup  = 1.0; //intermediate router speed 1cycle 1flit
+num_vcs = 6;
+vc_allocator = separable_input_first;
+sw_allocator = separable_input_first;
+vc_buf_size = 100000;
+
+// Traffic
+traffic = pairwise;
+//latency: drains all packet, throughput:no drain?
+sim_type = latency;
+warmup_periods = 0;
+sim_count      = 1;
+sample_period  = 1;
+max_samples    = 10000000;
+collective_threshold = 2;
+delay_threshold = 1;
+
+//1: batch mode, 0: injection mode
+use_read_write = 0;
+
+//for injection mode
+packet_size = 8;
+injection_rate = 0.125;
+
+```
