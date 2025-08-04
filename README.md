@@ -6,10 +6,12 @@ Originally developed for and introduced with the [Principles and Practices of In
 
 ---
 New Features
-+ topology PolarFly+
++ PolarFly+
   - PolarFly+ is a novel topology that combining hypercube and PolarFly.
   - F2-F7 PolarFly and F0 (No PolarFly, just a hypercube) are supported
   - 1-7D hypercube and 0D (No hypercube, just a PolarFly) are supported
++ Single-tier switch
+  - Not only fat-tree, a single-tier switch like Nvlink is implemented
 + routing algorithm
   - basic algorithm dim_order_polarflyplus
   - fault adoivance 
@@ -20,6 +22,7 @@ New Features
 How to use
 + simulation
   - random simulation
+
 For 4DxF7 PolarFly+ with 10% offered load random traffic, set the config file as follows:
 ```
 
@@ -116,8 +119,8 @@ write_reply_size = 1;
 link_failures = 1;
 fail_seed=time;
 ```
-
   - collective simulation
+
 For 3DxF5 PolarFly+ with single-NIC pairwise exchange traffic pattern of 16 length messages, set the config file as follows:
 ```
 
@@ -256,3 +259,48 @@ packet_size = 8;
 injection_rate = 0.125;
 
 ```
++ simulatoin results
+  - cycles for collective traffics 
+
+For PolarFly+ with pairwise exchange, set collective.hpp as follows:
+```
+#ifndef _COLLECTIVE_HPP_
+#define _COLLECTIVE_HPP_
+
+#define PFP_CYCLE_DEBUG // tarfficmanager
+//#define HCUBE_CYCLE_DEBUG 
+//#define FATTREE_CYCLE_DEBUG
+
+//#define PFP_STEPUP_DEBUG
+//#define HCUBE_STEPUP_DEBUG
+//#define FATTREE_STEPUP_DEBUG
+//#define HCUBE_ROUTING_DEBUG //routefunc
+//#define TORUS_ROUTING_DEBUG //routefunc
+//#define FATTREE_ROUTING_DEBUG //routefunc
+//#define FATTREE_DEBUG
+//#define SWITCH // for 1-tier fat-tree
+
+#define PAIRWISE
+//#define RING
+//#define BYNARYTREE
+
+#ifdef PAIRWISE
+const int max_step = 20;
+#endif
+
+#ifdef RING
+const int max_step = 8192;
+#endif
+
+#ifdef BYNARYTREE
+const int max_step = 20;
+#endif
+
+//#define PAIRWISE_TRAFFIC_DEBUG // traffic
+//#define RING_TRAFFIC_DEBUG // traffic
+
+#endif
+
+```
+
+
