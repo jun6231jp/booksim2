@@ -6,7 +6,18 @@ Originally developed for and introduced with the [Principles and Practices of In
 The current major release, BookSim 2.0, supports a wide range of topologies such as mesh, torus and flattened butterfly networks, provides diverse routing algorithms and includes numerous options for customizing the network's router microarchitecture.
 
 ---
+New Features
++ topology PolarFly+
+  - PolarFly+ is a novel topology that combining hypercube and PolarFly.
+  - F2-F7 PolarFly and F0 (No PolarFly, just a hypercube) are supported
+  - 1-7D hypercube and 0D (No hypercube, just a PolarFly) are supported
++ routing algorithm
+  - basic algorithm dim_order_polarflyplus
+  - fault adoivance 
++ collective traffics
+  - pairwise exchange
+  - ring
 
-If you use BookSim in your research, we would appreciate the following citation in any publications to which it has contributed:
-
-Nan Jiang, Daniel U. Becker, George Michelogiannakis, James Balfour, Brian Towles, John Kim and William J. Dally. A Detailed and Flexible Cycle-Accurate Network-on-Chip Simulator. In *Proceedings of the 2013 IEEE International Symposium on Performance Analysis of Systems and Software*, 2013.
+How to use
++ random simulation
+  
